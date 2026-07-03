@@ -7,7 +7,7 @@ const fallbackSources = [
   { id: 'clipboard', name: 'Clipboard', status: 'online', source_code: NUMBERING.sources.clipboard },
   { id: 'ahk', name: 'AHK', status: 'online', source_code: NUMBERING.sources.ahk },
   { id: 'codex', name: 'Codex', status: 'online', source_code: NUMBERING.sources.codex },
-  { id: 'kimi', name: 'Kimi CLI', status: 'paused', source_code: NUMBERING.sources.kimi },
+  { id: 'kimi', name: 'Kimmy', status: 'online', source_code: NUMBERING.sources.kimi },
 ];
 const starterFolders = [{ id: 'local-inbox', name: 'Inbox', folder_code: NUMBERING.folders.inbox, children: [{ id: 'local-active', name: 'Active', folder_code: NUMBERING.folders.active }] }];
 const initials = (s) => (s?.name || s?.id || '?').split(/\s|-/).map((p) => p[0]).join('').slice(0, 3).toUpperCase();
