@@ -6,6 +6,9 @@ import {
   FolderOpen,
   ChevronRight,
   ChevronDown,
+  Star,
+  ArrowUpDown,
+  SlidersHorizontal,
   MessageSquare,
   Terminal,
   Bot,
@@ -22,9 +25,12 @@ import * as api from '@/lib/api/client';
 // ===== CHAT SIDEBAR =====
 function ChatSidebar() {
   const { state, dispatch, loadFolders, loadMessages } = useApp();
-  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [foldersOpen, setFoldersOpen] = useState(true);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const folderCount = (name: string) =>
+    (state.messages as any[]).filter((m) => (m.folder || '') === name).length;
+  const starred = (state.messages as any[]).filter((m) => m.pinned);
 
   useEffect(() => {
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -65,7 +71,8 @@ function ChatSidebar() {
             <span className="w-3.5" />
           )}
           <FolderOpen size={14} className="text-[hsl(var(--tom-gold-dim))]" />
-          <span className="truncate">{folder.name}</span>
+          <span className="truncate flex-1 text-left">{folder.name}</span>
+          <span className="text-[11px] text-[hsl(var(--tom-text-dim))] tabular-nums">{folderCount(folder.name)}</span>
         </button>
         {hasChildren && isExpanded && (
           <div>{children.map((child) => renderFolder(child, depth + 1))}</div>
@@ -87,50 +94,61 @@ function ChatSidebar() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="px-3 pt-2">
-        <button
-          onClick={() => setSearchOpen(!searchOpen)}
-          className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-[hsl(var(--tom-text-muted))] hover:text-[hsl(var(--tom-text))] hover:bg-[hsl(var(--tom-bg-surface))] rounded-md transition-colors border border-[hsl(var(--tom-border))]"
-        >
-          <Search size={14} />
-          <span>Search Chats</span>
-        </button>
-        {searchOpen && (
+      {/* Search bar with sort + filter (TypingMind-style) */}
+      <div className="px-3 pt-3 pb-1 flex items-center gap-2">
+        <div className="flex-1 flex items-center gap-2 px-3 py-1.5 border border-[hsl(var(--tom-border))] rounded-md focus-within:border-[hsl(var(--tom-gold-dim))]">
+          <Search size={14} className="text-[hsl(var(--tom-text-dim))]" />
           <input
-            autoFocus
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search conversations..."
-            className="w-full mt-2 px-3 py-1.5 text-sm bg-[hsl(var(--tom-bg))] border border-[hsl(var(--tom-border))] rounded-md text-[hsl(var(--tom-text))] placeholder:text-[hsl(var(--tom-text-dim))] focus:outline-none focus:border-[hsl(var(--tom-gold-dim))]"
+            placeholder="Search chats"
+            className="flex-1 bg-transparent text-sm text-[hsl(var(--tom-text))] placeholder:text-[hsl(var(--tom-text-dim))] focus:outline-none"
           />
-        )}
+        </div>
+        <button title="Sort" className="p-1.5 rounded-md text-[hsl(var(--tom-text-muted))] hover:text-[hsl(var(--tom-text))] hover:bg-[hsl(var(--tom-bg-surface))]">
+          <ArrowUpDown size={15} />
+        </button>
+        <button title="Filter" className="p-1.5 rounded-md text-[hsl(var(--tom-text-muted))] hover:text-[hsl(var(--tom-text))] hover:bg-[hsl(var(--tom-bg-surface))]">
+          <SlidersHorizontal size={15} />
+        </button>
       </div>
 
-      {/* Folder tree */}
       <div className="flex-1 overflow-y-auto scrollbar-thin px-2 py-2">
-        {state.isLoading && state.folders.length === 0 ? (
-          <div className="text-sm text-[hsl(var(--tom-text-dim))] px-3 py-4 text-center">Loading folders...</div>
-        ) : (
-          rootFolders.map((folder) => renderFolder(folder))
+        {/* Folders section with count */}
+        <button
+          onClick={() => setFoldersOpen(!foldersOpen)}
+          className="w-full flex items-center gap-1.5 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-[hsl(var(--tom-text-muted))] hover:text-[hsl(var(--tom-text))] rounded-md"
+        >
+          {foldersOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+          <span className="flex-1 text-left">Folders</span>
+          <span className="text-[hsl(var(--tom-text-dim))] normal-case font-normal">{rootFolders.length}</span>
+        </button>
+        {foldersOpen && (
+          state.isLoading && state.folders.length === 0 ? (
+            <div className="text-sm text-[hsl(var(--tom-text-dim))] px-3 py-3 text-center">Loading folders...</div>
+          ) : (
+            rootFolders
+              .filter((f) => !searchQuery || f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map((folder) => renderFolder(folder))
+          )
         )}
 
-        {/* Messages grouped by folder */}
-        {state.messages.length > 0 && (
+        {/* Starred (pinned) chats with the gold tag */}
+        {starred.length > 0 && (
           <div className="mt-4">
-            <div className="px-3 py-1 text-xs font-semibold text-[hsl(var(--tom-text-dim))] uppercase tracking-wider">
-              Recent Messages
-            </div>
-            {state.messages.slice(-20).reverse().map((msg) => (
-              <button
-                key={msg.id}
-                onClick={() => dispatch({ type: 'SET_ACTIVE_CONVERSATION', payload: msg.conversation_id || msg.id })}
-                className="w-full flex items-start gap-2 px-3 py-2 text-sm text-[hsl(var(--tom-text-muted))] hover:text-[hsl(var(--tom-text))] hover:bg-[hsl(var(--tom-bg-surface))] rounded-md transition-colors text-left"
-              >
-                <MessageSquare size={14} className="mt-0.5 shrink-0 text-[hsl(var(--tom-text-dim))]" />
-                <span className="truncate">{msg.content.slice(0, 60)}{msg.content.length > 60 ? '...' : ''}</span>
-              </button>
-            ))}
+            <div className="px-3 py-1 text-xs font-semibold text-[hsl(var(--tom-text-dim))] uppercase tracking-wider">Starred</div>
+            {starred
+              .filter((msg) => !searchQuery || (msg.content || '').toLowerCase().includes(searchQuery.toLowerCase()))
+              .map((msg) => (
+                <button
+                  key={msg.id}
+                  onClick={() => dispatch({ type: 'SET_ACTIVE_CONVERSATION', payload: msg.conversation_id || msg.id })}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[hsl(var(--tom-text-muted))] hover:text-[hsl(var(--tom-text))] hover:bg-[hsl(var(--tom-bg-surface))] rounded-md transition-colors text-left"
+                >
+                  <span className="truncate flex-1">{(msg.content || '').slice(0, 40)}</span>
+                  <Star size={13} className="shrink-0 text-[hsl(var(--tom-gold))] fill-[hsl(var(--tom-gold))]" />
+                </button>
+              ))}
           </div>
         )}
       </div>
