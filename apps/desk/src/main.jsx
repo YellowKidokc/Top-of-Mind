@@ -19,6 +19,18 @@ const srcName = (s) => s?.name || s?.label || s?.source_id || s?.id || 'source';
 const srcId = (s) => s?.id || s?.source_id || s?.name || s?.label;
 const arr = (d, key) => Array.isArray(d) ? d : d?.[key] || [];
 const ACTIVE_AGENT_KEY = 'topOfMind.activeAgentId';
+const OP_FAMILY_KEY = 'topOfMind.operationFamily';
+const operationFamilies = [
+  { id: 'ahk', label: 'AHK', icon: '⌨', group: 'AutoHotkey' },
+  { id: 'clipboard', label: 'Clipboard', icon: '⧉', group: 'Clipboard' },
+  { id: 'files', label: 'Files', icon: '▣', group: 'File Operations' },
+  { id: 'knowledge', label: 'Knowledge', icon: '◇', group: 'Knowledge Bank' },
+  { id: 'vector', label: 'Vector', icon: '∑', group: 'Vectorization' },
+  { id: 'commands', label: 'Commands', icon: '>', group: 'Command Line' },
+  { id: 'agents', label: 'Agents', icon: '◎', group: 'Agents' },
+  { id: 'memory', label: 'Memory', icon: '◈', group: 'Memory' },
+  { id: 'hub', label: 'Hub', icon: '◆', group: 'API Calls' },
+];
 
 function ApiSettings({ online, setOnline, notice }) {
   const [url, setUrl] = useState(topOfMindApi.baseUrl);
@@ -58,22 +70,115 @@ function ControlBar({ input, setInput, send, selectedSource, selectedFolder, set
   async function pasteOnly() {
     const text = await navigator.clipboard?.readText?.();
     if (text) setInput((current)=> current ? `${current}\n${text}` : text);
-    await topOfMindApi.saveClipboard({ action: 'paste_to_active', target: agent, text: text || '', dry_run: true });
+    await topOfMindApi.saveClipboard({ action: 'clipboard_save', target: agent, text: text || '', dry_run: true });
+    await bridgeJob('paste_to_active', { text: text || '' });
   }
   const context = () => ({ target: agent, folder: selectedFolder?.name || 'Main', folder_code: selectedFolder?.folder_code, dry_run: true });
+  const bridgeJob = (action, payload = {}) => topOfMindApi.createBridgeJob({ worker: 'ahk-main', action, target: agent, payload, source: 'react-controlbar' });
   return <div className="controlbar" aria-label="Top of Mind control bar">
     <span className="active-pill">Active: {agent.name}</span>
     <button disabled={!!busy} onClick={()=>call('Paste', pasteOnly)}>Paste</button>
     <button disabled={!input.trim() || !!busy} onClick={send}>Send</button>
-    <button disabled={!!busy} onClick={()=>call('Pull', ()=>topOfMindApi.pullLatest(context()), 'Placeholder: final /pull_latest route not confirmed yet.')}>Pull</button>
-    <button disabled={!!busy} onClick={()=>call('Push', ()=>topOfMindApi.pushClipboard({ ...context(), text: input }), 'Placeholder: using /clipboard/save once hub route exists.')}>Push</button>
-    <button className={micOn?'toggled':''} onClick={()=>{setMicOn(!micOn); status('Mic', 'local toggle only; no audio transmitted.')}}>Mic</button>
-    <button className={scrollOn?'toggled':''} onClick={()=>{setScrollOn(!scrollOn); status('Scroll', `auto-scroll ${!scrollOn ? 'on' : 'off'}`)}}>Scroll</button>
+    <button disabled={!!busy} onClick={()=>call('Pull', ()=>bridgeJob('pull_latest', context()))}>Pull</button>
+    <button disabled={!!busy} onClick={()=>call('Push', ()=>topOfMindApi.pushClipboard({ ...context(), message: input }))}>Push</button>
+    <button disabled={!!busy} className={micOn?'toggled':''} onClick={()=>call('Mic', async()=>{ const next = !micOn; setMicOn(next); return bridgeJob('mic_toggle', { enabled: next }); })}>Mic</button>
+    <button disabled={!!busy} className={scrollOn?'toggled':''} onClick={()=>call('Scroll', async()=>{ const next = !scrollOn; setScrollOn(next); return bridgeJob('toggle_scroll', { enabled: next }); })}>Scroll</button>
     <button disabled={!!busy} onClick={()=>call('Save Memory', ()=>topOfMindApi.createMemoryItem({ ...context(), text: input, source: agent }))}>Save Memory</button>
     <button disabled={!!busy} onClick={()=>call('End All', ()=>topOfMindApi.endAll({ ...context(), action: 'end_all' }))}>End All</button>
     <button disabled={!!busy} onClick={()=>call('Hub Health', ()=>topOfMindApi.hubHealth())}>Hub Health</button>
-    <button disabled={!input.trim() || !!busy} onClick={()=>call('Agent Send', ()=>topOfMindApi.sendAgent({ ...context(), message: input, route_only: true }))}>Agent Send</button>
+    <button disabled={!input.trim() || !!busy} onClick={()=>call('Agent Send', ()=>topOfMindApi.sendAgent({ ...context(), action: 'agent_send', message: input, route_only: true }))}>Agent Send</button>
   </div>;
+}
+
+
+function OperatorSurface({ selectedSource, input, setNotice }) {
+  const [family, setFamilyState] = useState(()=>localStorage.getItem(OP_FAMILY_KEY) || 'hub');
+  const [folded, setFolded] = useState(false);
+  const [capabilities, setCapabilities] = useState([]);
+  const [ahkOnline, setAhkOnline] = useState(false);
+  const [profile, setProfile] = useState('TopMind');
+  const agent = { id: srcId(selectedSource), name: srcName(selectedSource), source_code: selectedSource?.source_code };
+  const selectedFamily = operationFamilies.find((f)=>f.id===family) || operationFamilies[0];
+  const setFamily = (id) => { setFamilyState(id); localStorage.setItem(OP_FAMILY_KEY, id); setFolded(false); };
+  const status = (name, text) => setNotice(`${name}: ${text}`);
+  const bridgeJob = (action, payload = {}) => topOfMindApi.createBridgeJob({ worker: 'ahk-main', action, target: agent, payload, source: 'operator-surface' });
+  async function safeCall(name, fn, options = {}) {
+    if (options.confirm && !window.confirm(options.confirm)) { status(name, 'cancelled'); return; }
+    try { const result = await fn(); status(name, result?.status || result?.message || 'hub request accepted'); }
+    catch (e) { status(name, `API route unavailable or failed (${e.message})`); }
+  }
+  useEffect(()=>{ topOfMindApi.getCapabilities().then((d)=>setCapabilities(arr(d,'capabilities'))).catch(()=>setCapabilities([])); },[]);
+  const groupedCapabilities = capabilities.filter((cap)=>cap.enabled !== false && (cap.ui_group || '').toLowerCase() === selectedFamily.group.toLowerCase());
+  const actionButton = (label, onClick, danger) => <button className={danger?'danger':''} onClick={onClick}>{label}</button>;
+  const defaultActions = {
+    ahk: [
+      actionButton('Paste job', ()=>safeCall('AHK Paste', ()=>bridgeJob('paste_to_active', { text: input }))),
+      actionButton('Send job', ()=>safeCall('AHK Send', ()=>bridgeJob('send_to_active', { text: input }))),
+      actionButton('Toggle overlay', ()=>safeCall('AHK Overlay', ()=>bridgeJob('toggle_overlay', { profile }))),
+    ],
+    clipboard: [
+      actionButton('Save clipboard', ()=>safeCall('Clipboard', ()=>topOfMindApi.saveClipboard({ action: 'clipboard_save', target: agent, text: input, dry_run: true }))),
+      actionButton('Push clipboard', ()=>safeCall('Push', ()=>topOfMindApi.pushClipboard({ target: agent, message: input, dry_run: true }))),
+    ],
+    files: [
+      actionButton('List folders', ()=>safeCall('Folders', ()=>topOfMindApi.getFolders())),
+      actionButton('Dry-run file action', ()=>safeCall('File dry-run', ()=>topOfMindApi.fileActions({ action: 'dry_run', target: agent, dry_run: true }))),
+      actionButton('Overwrite file', ()=>safeCall('Overwrite', ()=>topOfMindApi.fileActions({ action: 'overwrite_file', target: agent, dry_run: true }), { confirm: 'Overwrite file actions require confirmation. Continue dry-run?' }), true),
+    ],
+    knowledge: [actionButton('Search KB', ()=>safeCall('Knowledge', ()=>topOfMindApi.searchFileCache(input || '')))],
+    vector: [
+      actionButton('Embed pending', ()=>safeCall('Vector', ()=>topOfMindApi.embedPending())),
+      actionButton('Search vectors', ()=>safeCall('Vector Search', ()=>topOfMindApi.searchMemory(input || '', 'vector'))),
+      actionButton('Bulk import', ()=>safeCall('Bulk import', ()=>bridgeJob('bulk_import', { dry_run: true }), { confirm: 'Bulk import requires confirmation. Queue dry-run?' }), true),
+    ],
+    commands: [
+      actionButton('Dry-run command', ()=>safeCall('Command', ()=>topOfMindApi.command({ action: 'dry_run', command: input, dry_run: true }), { confirm: 'Command line actions require confirmation. Continue dry-run?' }), true),
+    ],
+    agents: [
+      actionButton('Agent send', ()=>safeCall('Agent Send', ()=>topOfMindApi.sendAgent({ action: 'agent_send', target: agent, message: input, route_only: true, dry_run: true }))),
+      actionButton('Broadcast dry-run', ()=>safeCall('Broadcast', ()=>topOfMindApi.sendAgent({ action: 'broadcast_all', target: agent, message: input, route_only: true, dry_run: true }), { confirm: 'Broadcast to all agents requires confirmation. Continue dry-run?' }), true),
+    ],
+    memory: [
+      actionButton('Save memory', ()=>safeCall('Memory', ()=>topOfMindApi.createMemoryItem({ text: input, source: agent, dry_run: true }))),
+      actionButton('Search memory', ()=>safeCall('Memory Search', ()=>topOfMindApi.searchMemory(input || ''))),
+    ],
+    hub: [
+      actionButton('Health', ()=>safeCall('Hub Health', ()=>topOfMindApi.hubHealth())),
+      actionButton('Capabilities', ()=>safeCall('Capabilities', async()=>{ const d = await topOfMindApi.getCapabilities(); setCapabilities(arr(d,'capabilities')); return d; })),
+      actionButton('End all', ()=>safeCall('End All', ()=>topOfMindApi.endAll({ action: 'end_all', target: agent }), { confirm: 'Stop/end all active jobs?' }), true),
+    ],
+  };
+  return <aside className={`operator-surface ${folded?'folded':''}`} aria-label="Operator command surface">
+    <nav className="shortcut-rail" aria-label="Operation shortcuts">
+      <button className="fold" onClick={()=>setFolded(!folded)} aria-label={folded?'Expand operations':'Fold operations'} title={folded?'Expand operations':'Fold operations'}>{folded?'◀':'▶'}</button>
+      <div className="rail-ahk" aria-label="Persistent AutoHotkey controls">
+        <span className={`dot ${ahkOnline?'ok':'bad'}`} title={`AHK ${ahkOnline?'online':'offline'} · ${profile}`}></span>
+        <button onClick={()=>safeCall('AHK Frame', ()=>bridgeJob('toggle_overlay', { profile }))} aria-label="Toggle AHK frame overlay" title="Frame / overlay">F</button>
+        <button onClick={()=>safeCall('AHK Paste', ()=>bridgeJob('paste_to_active', { text: input }))} aria-label="AHK paste to active" title="Paste">P</button>
+        <button onClick={()=>safeCall('AHK Send', ()=>bridgeJob('send_to_active', { text: input }))} aria-label="AHK send to active" title="Send">S</button>
+        <button onClick={()=>safeCall('End All', ()=>topOfMindApi.endAll({ action: 'end_all', target: agent }))} aria-label="Stop or end all" title="Stop / end all">!</button>
+        <button onClick={()=>safeCall('Hub', ()=>topOfMindApi.hubHealth())} aria-label="Hub health" title="Hub health">H</button>
+        <button onClick={()=>safeCall('Bridge Test', async()=>{ const r = await bridgeJob('bridge_test', { profile }); setAhkOnline(true); return r; })} aria-label="Quick bridge test" title="Bridge test">T</button>
+      </div>
+      {operationFamilies.map((item)=><button key={item.id} className={family===item.id?'active':''} onClick={()=>setFamily(item.id)} aria-label={item.label} title={item.label}>{item.icon}</button>)}
+    </nav>
+    {!folded && <section className="ops-panel">
+      <div className="ahk-layer" aria-label="Persistent AutoHotkey layer">
+        <div><b>AHK</b><span className={`dot ${ahkOnline?'ok':'bad'}`}></span></div>
+        <small>{ahkOnline?'online':'offline'} · {profile}</small>
+        <div className="mini-grid">
+          <button onClick={()=>safeCall('AHK Frame', ()=>bridgeJob('toggle_overlay', { profile }))}>Frame</button>
+          <button onClick={()=>safeCall('AHK Paste', ()=>bridgeJob('paste_to_active', { text: input }))}>Paste</button>
+          <button onClick={()=>safeCall('AHK Send', ()=>bridgeJob('send_to_active', { text: input }))}>Send</button>
+          <button onClick={()=>safeCall('End All', ()=>topOfMindApi.endAll({ action: 'end_all', target: agent }))}>Stop</button>
+          <button onClick={()=>safeCall('Hub', ()=>topOfMindApi.hubHealth())}>Hub</button>
+          <button onClick={()=>safeCall('Bridge Test', async()=>{ const r = await bridgeJob('bridge_test', { profile }); setAhkOnline(true); return r; })}>Test</button>
+        </div>
+      </div>
+      <div className="ops-head"><b>{selectedFamily.group}</b><small>target: {agent.name}</small></div>
+      {groupedCapabilities.length ? <div className="cap-list">{groupedCapabilities.map((cap)=><button key={cap.id} disabled={cap.enabled===false} className={cap.requires_confirm || cap.risk_level === 'danger' ? 'danger' : ''} onClick={()=>safeCall(cap.label, ()=>topOfMindApi.createBridgeJob({ worker: 'ahk-main', action: cap.id, target: agent, payload: { dry_run: cap.supports_dry_run !== false }, source: 'capability' }), cap.requires_confirm ? { confirm: `${cap.label} requires confirmation. Continue?` } : {})}>{cap.label}<small>{cap.connector} · {cap.risk_level || 'safe'}</small></button>)}</div> : <div className="ops-grid">{defaultActions[family] || defaultActions.hub}<small className="placeholder">No /capabilities data for this group yet; showing safe hub placeholders.</small></div>}
+    </section>}
+  </aside>;
 }
 
 function SearchPanel({ title, modeToggle, onSearch }) {
@@ -101,7 +206,7 @@ function App() {
   async function patchMessage(id, body){ setMessages(ms=>ms.map(m=>(m.id===id||m.message_id===id)?{...m,...body}:m)); try{ await topOfMindApi.updateMessage(id, body); } catch { setNotice('Local patch shown; API patch failed.'); } }
   async function createFolder(){ const name = prompt('Folder name?'); if(!name) return; try { const f = await topOfMindApi.createFolder({ name, parent_id: selectedFolder.id || selectedFolder.folder_id }); setFolders(fs=>[...fs, f]); } catch { setNotice('Folder must be created by API; request failed.'); } }
   const filtered = useMemo(()=>messages.slice(-75),[messages]);
-  return <div className="app"><nav className="rail"><b>ToM</b>{['chats','memory','files','operator','settings'].map(x=><button className={active===x?'on':''} onClick={()=>setActive(x)} key={x}>{x[0].toUpperCase()}</button>)}</nav><Sidebar folders={folders} selectedFolder={selectedFolder} setSelectedFolder={setSelectedFolder} createFolder={createFolder} active={active} setActive={setActive}/><Funnel sources={sources} setSources={setSources} selectedMessage={selectedMessage} patchMessage={patchMessage} collapsed={funnelCollapsed} setCollapsed={setFunnelCollapsed} activeAgentId={activeAgentId} setActiveAgentId={setActiveAgentId}/><main><header><h1>Top of Mind Desk</h1><span className={`status ${online?'ok':'bad'}`}>{online?'● live':'○ offline'} · {topOfMindApi.baseUrl}</span></header><section className="workspace">{active==='memory' && <SearchPanel title="Memory search" modeToggle onSearch={(q,m)=>topOfMindApi.searchMemory(q,m==='vector'?'vector':undefined)}/>} {active==='files' && <SearchPanel title="File cache search" onSearch={(q)=>topOfMindApi.searchFileCache(q)}/>} {active==='settings' && <ApiSettings online={online} setOnline={setOnline} notice={notice}/>} {active==='operator' && <section className="panel"><h3>Operator drafts</h3><textarea placeholder='{"action":"write_text","path":"notes.txt","text":"draft only"}'/><textarea placeholder='{"action":"append_text","path":"notes.txt","text":"draft only"}'/><button onClick={()=>setNotice('Draft only. Review before sending to /operator/file-actions or /operator/commands.')}>Do not run destructive action</button></section>}<div className="walls">{[1,2,3].map(w=><div className="wall" key={w}><h3>Wall {w}</h3>{filtered.filter((_,i)=>i%3===w-1).map((m,i)=><article onClick={()=>setSelectedMessage(m)} className="msg" key={m.id||m.message_id||i}><b>{m.source_label || m.source || m.source_id || 'source'}</b><p>{m.body || m.content || m.text || m.message}</p><small>{m.role || m.type_code} · {m.folder || m.folder_code}</small></article>)}</div>)}</div></section><footer><ControlBar input={input} setInput={setInput} send={send} selectedSource={selectedSource} selectedFolder={selectedFolder} setNotice={setNotice}/><div className="cmd"><button onClick={()=>topOfMindApi.combine({ folder_code: selectedFolder.folder_code })}>Combine</button><button>Split</button><button>Broadcast</button><button onClick={()=>topOfMindApi.endAll()}>End all</button><span>source_code {selectedSource.source_code}</span><span>folder_code {selectedFolder.folder_code}</span></div><div className="composer"><textarea value={input} onChange={(e)=>setInput(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))send();}} placeholder="Message Top of Mind… Ctrl/⌘+Enter"/><button onClick={send}>Send</button></div></footer></main></div>;
+  return <div className="app"><nav className="rail"><b>ToM</b>{['chats','memory','files','operator','settings'].map(x=><button className={active===x?'on':''} onClick={()=>setActive(x)} key={x}>{x[0].toUpperCase()}</button>)}</nav><Sidebar folders={folders} selectedFolder={selectedFolder} setSelectedFolder={setSelectedFolder} createFolder={createFolder} active={active} setActive={setActive}/><Funnel sources={sources} setSources={setSources} selectedMessage={selectedMessage} patchMessage={patchMessage} collapsed={funnelCollapsed} setCollapsed={setFunnelCollapsed} activeAgentId={activeAgentId} setActiveAgentId={setActiveAgentId}/><main><header><h1>Top of Mind Desk</h1><span className={`status ${online?'ok':'bad'}`}>{online?'● live':'○ offline'} · {topOfMindApi.baseUrl}</span></header><section className="workspace">{active==='memory' && <SearchPanel title="Memory search" modeToggle onSearch={(q,m)=>topOfMindApi.searchMemory(q,m==='vector'?'vector':undefined)}/>} {active==='files' && <SearchPanel title="File cache search" onSearch={(q)=>topOfMindApi.searchFileCache(q)}/>} {active==='settings' && <ApiSettings online={online} setOnline={setOnline} notice={notice}/>} {active==='operator' && <section className="panel"><h3>Operator drafts</h3><textarea placeholder='{"action":"write_text","path":"notes.txt","text":"draft only"}'/><textarea placeholder='{"action":"append_text","path":"notes.txt","text":"draft only"}'/><button onClick={()=>setNotice('Draft only. Review before sending to /operator/file-actions or /operator/commands.')}>Do not run destructive action</button></section>}<div className="walls">{[1,2,3].map(w=><div className="wall" key={w}><h3>Wall {w}</h3>{filtered.filter((_,i)=>i%3===w-1).map((m,i)=><article onClick={()=>setSelectedMessage(m)} className="msg" key={m.id||m.message_id||i}><b>{m.source_label || m.source || m.source_id || 'source'}</b><p>{m.body || m.content || m.text || m.message}</p><small>{m.role || m.type_code} · {m.folder || m.folder_code}</small></article>)}</div>)}</div></section><footer><ControlBar input={input} setInput={setInput} send={send} selectedSource={selectedSource} selectedFolder={selectedFolder} setNotice={setNotice}/><div className="cmd"><button onClick={()=>topOfMindApi.combine({ folder_code: selectedFolder.folder_code })}>Combine</button><button>Split</button><button>Broadcast</button><button onClick={()=>topOfMindApi.endAll()}>End all</button><span>source_code {selectedSource.source_code}</span><span>folder_code {selectedFolder.folder_code}</span></div><div className="composer"><textarea value={input} onChange={(e)=>setInput(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))send();}} placeholder="Message Top of Mind… Ctrl/⌘+Enter"/><button onClick={send}>Send</button></div></footer></main><OperatorSurface selectedSource={selectedSource} input={input} setNotice={setNotice}/></div>;
 }
 
 createRoot(document.getElementById('root')).render(<App />);
