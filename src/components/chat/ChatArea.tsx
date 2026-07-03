@@ -190,7 +190,9 @@ export function ChatArea() {
           </div>
         ) : (
           <div className="divide-y divide-[hsl(var(--tom-border))]/30">
-            {state.messages.map((message) => (
+            {state.messages
+              .filter((m: any) => state.selectedSourceIds.length === 0 || state.selectedSourceIds.includes(m.source_id))
+              .map((message) => (
               <MessageBubble
                 key={message.id}
                 message={message}

@@ -9,7 +9,7 @@ type Agent = { id: string; name: string; status?: string };
 const letter = (name: string) => (name || '?').trim().charAt(0).toUpperCase();
 
 export function AgentRail({ side = 'left' }: { side?: 'left' | 'right' }) {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const [openId, setOpenId] = useState<string | null>(null);
   const isRight = side === 'right';
   const railBorder = isRight ? 'border-l' : 'border-r';
@@ -98,8 +98,17 @@ export function AgentRail({ side = 'left' }: { side?: 'left' | 'right' }) {
               return (
                 <button
                   key={opt.label}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md bg-[hsl(var(--tom-bg))] border border-[hsl(var(--tom-border))] hover:border-[hsl(var(--tom-gold-dim))] text-left transition-colors"
-                  title="Menu TBD"
+                  onClick={() => {
+                    if (opt.label === 'Open chat') {
+                      dispatch({ type: 'TOGGLE_SOURCE_SELECTION', payload: active.id });
+                    }
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md bg-[hsl(var(--tom-bg))] border text-left transition-colors ${
+                    opt.label === 'Open chat' && state.selectedSourceIds.includes(active.id)
+                      ? 'border-[hsl(var(--tom-gold))]'
+                      : 'border-[hsl(var(--tom-border))] hover:border-[hsl(var(--tom-gold-dim))]'
+                  }`}
+                  title={opt.label === 'Open chat' ? 'Filter the stream to this AI' : 'Menu TBD'}
                 >
                   <Icon size={16} className="text-[hsl(var(--tom-gold-dim))]" />
                   <span className="flex-1">
