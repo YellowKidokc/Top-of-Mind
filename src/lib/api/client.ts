@@ -98,20 +98,48 @@ export async function getMessages(limit = 75): Promise<Message[]> {
 }
 
 export async function postMessage(data: {
+  source_id?: string;
+  source_label?: string;
+  body?: string;
   content: string;
   source_code: number;
   type_code: number;
   priority_code: number;
   wall_code: number;
   folder_code: number;
+  role?: string;
+  wall?: string;
+  folder?: string;
   parent_id?: string;
   conversation_id?: string;
   metadata?: Record<string, unknown>;
 }): Promise<Message> {
-  return fetchApi<Message>('/top-of-mind/messages', {
+  const payload = {
+    source_id: data.source_id ?? 'desk',
+    source_label: data.source_label ?? 'Top of Mind Desk',
+    body: data.body ?? data.content,
+    source_code: data.source_code,
+    type_code: data.type_code,
+    role: data.role ?? 'user',
+    priority_code: data.priority_code,
+    wall: data.wall ?? 'main',
+    wall_code: data.wall_code,
+    folder: data.folder ?? 'Main',
+    folder_code: data.folder_code,
+    pinned: false,
+    metadata: data.metadata ?? {},
+  };
+  const d = await fetchApi<any>('/top-of-mind/messages', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
+  const m = d?.message ?? d;
+  return {
+    ...m,
+    id: m.id ?? m.message_id,
+    content: m.content ?? m.body ?? '',
+    source: m.source ?? m.source_label ?? m.source_id ?? 'source',
+  };
 }
 
 export async function updateMessage(messageId: string, data: Partial<Message>): Promise<Message> {
@@ -201,7 +229,7 @@ export async function postOperatorCommand(command: { command: string; args?: str
 export async function testConnection(): Promise<boolean> {
   try {
     const baseUrl = getBaseUrl();
-    const response = await fetch(`${baseUrl}/health`, { method: 'GET' });
+    const response = await fetch(`${baseUrl}/jobs/stats`, { method: 'GET' });
     return response.ok;
   } catch {
     return false;

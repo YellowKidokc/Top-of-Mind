@@ -52,6 +52,30 @@ function getSourceColor(sourceCode: number): string {
   }
 }
 
+// Read text aloud, preferring Microsoft Brian Multilingual (Edge's natural voice).
+// Voices may load async, so warm up + retry on voiceschanged.
+function speakWithBrian(text: string) {
+  const s = window.speechSynthesis;
+  if (!s || !text) return;
+  const go = () => {
+    s.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const vs = s.getVoices();
+    const v =
+      vs.find((x) => /brian/i.test(x.name) && /multiling/i.test(x.name)) ||
+      vs.find((x) => /brian/i.test(x.name)) ||
+      vs.find((x) => /natural/i.test(x.name)) ||
+      null;
+    if (v) u.voice = v;
+    s.speak(u);
+  };
+  if (s.getVoices().length) go();
+  else {
+    s.onvoiceschanged = go;
+    s.getVoices();
+  }
+}
+
 function MessageBubble({ message, isSelected, onToggleSelect }: {
   message: Message;
   isSelected: boolean;
@@ -115,14 +139,9 @@ function MessageBubble({ message, isSelected, onToggleSelect }: {
             <Copy size={12} />
           </button>
           <button
-            onClick={() => {
-              const s = window.speechSynthesis;
-              if (!s) return;
-              s.cancel();
-              s.speak(new SpeechSynthesisUtterance(message.content));
-            }}
+            onClick={() => speakWithBrian(message.content)}
             className="flex items-center gap-1 px-2 py-0.5 text-xs text-[hsl(var(--tom-text-dim))] hover:text-[hsl(var(--tom-gold))] rounded transition-colors"
-            title="Read aloud"
+            title="Read aloud (Brian in Edge)"
           >
             <Volume2 size={12} />
           </button>
