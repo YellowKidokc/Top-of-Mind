@@ -12,6 +12,7 @@ import {
   Square,
   Copy,
   Pin,
+  Volume2,
 } from 'lucide-react';
 import type { Message } from '@/types';
 
@@ -112,6 +113,18 @@ function MessageBubble({ message, isSelected, onToggleSelect }: {
             title="Copy"
           >
             <Copy size={12} />
+          </button>
+          <button
+            onClick={() => {
+              const s = window.speechSynthesis;
+              if (!s) return;
+              s.cancel();
+              s.speak(new SpeechSynthesisUtterance(message.content));
+            }}
+            className="flex items-center gap-1 px-2 py-0.5 text-xs text-[hsl(var(--tom-text-dim))] hover:text-[hsl(var(--tom-gold))] rounded transition-colors"
+            title="Read aloud"
+          >
+            <Volume2 size={12} />
           </button>
           <button
             className="flex items-center gap-1 px-2 py-0.5 text-xs text-[hsl(var(--tom-text-dim))] hover:text-[hsl(var(--tom-text-muted))] rounded transition-colors"
