@@ -1,5 +1,6 @@
 import { AppProvider, useApp } from '@/store/AppContext';
 import { IconRail } from '@/components/sidebar/IconRail';
+import { AgentRail } from '@/components/sidebar/AgentRail';
 import { Sidebar } from '@/components/sidebar/Sidebar';
 import { FunnelSidebar } from '@/components/funnel/FunnelSidebar';
 import { ChatArea } from '@/components/chat/ChatArea';
@@ -53,6 +54,9 @@ function MainContent() {
     <div className="h-screen w-screen flex overflow-hidden bg-[hsl(var(--tom-bg))] text-[hsl(var(--tom-text))]">
       {/* 1. Far-left icon rail */}
       <IconRail />
+
+      {/* 1b. Agent rail: one letter per AI, click to open its panel */}
+      <AgentRail />
 
       {/* 2. Second sidebar (TypingMind-like) */}
       <Sidebar />

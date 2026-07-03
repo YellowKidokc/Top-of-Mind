@@ -253,12 +253,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Auto-check connection on mount
+  // Load data + auto-check connection on mount
   useEffect(() => {
     checkConnection();
+    loadSources();
+    loadFolders();
+    loadMessages();
     const interval = setInterval(checkConnection, 30000);
-    return () => clearInterval(interval);
-  }, [checkConnection]);
+    const refresh = setInterval(() => { loadSources(); loadMessages(); }, 4000);
+    return () => { clearInterval(interval); clearInterval(refresh); };
+  }, [checkConnection, loadSources, loadFolders, loadMessages]);
 
   const value: AppContextValue = {
     state,

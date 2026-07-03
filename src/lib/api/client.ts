@@ -45,7 +45,8 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
 
 // ===== FOLDERS =====
 export async function getFolders(): Promise<Folder[]> {
-  return fetchApi<Folder[]>('/folders');
+  const d = await fetchApi<any>('/folders');
+  return Array.isArray(d) ? d : (d?.folders ?? []);
 }
 
 export async function createFolder(data: { name: string; parent_id?: string | null }): Promise<Folder> {
@@ -67,7 +68,14 @@ export async function archiveFolder(folderId: string): Promise<void> {
 
 // ===== TOP OF MIND MESSAGES =====
 export async function getSources(): Promise<unknown[]> {
-  return fetchApi<unknown[]>('/top-of-mind/sources');
+  const d = await fetchApi<any>('/top-of-mind/sources');
+  const list = Array.isArray(d) ? d : (d?.sources ?? []);
+  return list.map((s: any) => ({
+    ...s,
+    id: s.id ?? s.source_id,
+    name: s.name ?? s.label ?? s.source_id,
+    status: s.status ?? 'online',
+  }));
 }
 
 export async function createSource(data: Record<string, unknown>): Promise<unknown> {
@@ -78,7 +86,15 @@ export async function createSource(data: Record<string, unknown>): Promise<unkno
 }
 
 export async function getMessages(limit = 75): Promise<Message[]> {
-  return fetchApi<Message[]>(`/top-of-mind/messages?limit=${limit}`);
+  const d = await fetchApi<any>(`/top-of-mind/messages?limit=${limit}`);
+  const list = Array.isArray(d) ? d : (d?.messages ?? []);
+  // Normalize hub shape (body/source_label) to what the UI reads (content/source).
+  return list.map((m: any) => ({
+    ...m,
+    id: m.id ?? m.message_id,
+    content: m.content ?? m.body ?? '',
+    source: m.source ?? m.source_label ?? m.source_id ?? 'source',
+  }));
 }
 
 export async function postMessage(data: {
