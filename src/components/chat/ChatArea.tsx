@@ -1,5 +1,5 @@
 import { useApp } from '@/store/AppContext';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   User,
   Bot,
@@ -13,6 +13,7 @@ import {
   Copy,
   Pin,
   Volume2,
+  VolumeX,
 } from 'lucide-react';
 import type { Message } from '@/types';
 
@@ -160,6 +161,8 @@ function MessageBubble({ message, isSelected, onToggleSelect }: {
 export function ChatArea() {
   const { state, dispatch, loadMessages } = useApp();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [autoRead, setAutoRead] = useState(() => localStorage.getItem('tom.autoRead') === '1');
+  const lastSpokenId = useRef<string | null>(null);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -167,6 +170,25 @@ export function ChatArea() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [state.messages.length]);
+
+  // Auto-read: when a new AI message arrives and auto-read is on, speak it (Brian in Edge).
+  useEffect(() => {
+    if (!autoRead || state.messages.length === 0) return;
+    const latest: any = state.messages[state.messages.length - 1];
+    if (!latest || latest.id === lastSpokenId.current) return;
+    // don't re-read the whole backlog on first turn-on / initial load
+    if (lastSpokenId.current === null) { lastSpokenId.current = latest.id; return; }
+    lastSpokenId.current = latest.id;
+    if (latest.role !== 'user') speakWithBrian(latest.content);
+  }, [state.messages, autoRead]);
+
+  const toggleAutoRead = () => {
+    const next = !autoRead;
+    setAutoRead(next);
+    localStorage.setItem('tom.autoRead', next ? '1' : '0');
+    if (!next) window.speechSynthesis?.cancel();
+    else lastSpokenId.current = state.messages.length ? (state.messages[state.messages.length - 1] as any).id : null;
+  };
 
   // Load messages on mount
   useEffect(() => {
@@ -186,7 +208,19 @@ export function ChatArea() {
             {state.messages.length} messages
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleAutoRead}
+            title={autoRead ? 'Auto-read is ON — new messages play in Brian' : 'Auto-read is OFF'}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border transition-colors ${
+              autoRead
+                ? 'text-[hsl(var(--tom-gold))] border-[hsl(var(--tom-gold))] bg-[hsl(var(--tom-gold))]/10'
+                : 'text-[hsl(var(--tom-text-muted))] border-[hsl(var(--tom-border))] hover:text-[hsl(var(--tom-text))]'
+            }`}
+          >
+            {autoRead ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            Read aloud
+          </button>
           {state.selectedMessageIds.length > 0 && (
             <span className="text-xs text-[hsl(var(--tom-gold))]">
               {state.selectedMessageIds.length} selected
