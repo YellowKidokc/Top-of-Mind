@@ -25,8 +25,8 @@ export function AgentRail({ side = 'left' }: { side?: 'left' | 'right' }) {
 
   return (
     <div className={`flex ${isRight ? 'flex-row-reverse' : ''}`}>
-      {/* The rail: one letter per AI */}
-      <div className={`w-12 min-w-[48px] bg-[#0a0a0a] ${railBorder} border-[hsl(var(--tom-border))] flex flex-col items-center py-3 gap-1 z-20`}>
+      {/* The rail: a letter + name per AI */}
+      <div className={`w-16 min-w-[64px] bg-[#0a0a0a] ${railBorder} border-[hsl(var(--tom-border))] flex flex-col items-center py-3 gap-1 z-20 overflow-y-auto scrollbar-thin`}>
         <div
           className="w-9 h-9 flex items-center justify-center rounded-md text-[hsl(var(--tom-gold))] mb-1"
           title="Your AIs"
@@ -42,21 +42,29 @@ export function AgentRail({ side = 'left' }: { side?: 'left' | 'right' }) {
               key={a.id}
               onClick={() => setOpenId(isOpen ? null : a.id)}
               title={a.name}
-              className={`w-9 h-9 flex items-center justify-center rounded-full text-sm font-bold transition-all duration-150 group relative border ${
-                isOpen
-                  ? 'text-[#0a0a0a] bg-[hsl(var(--tom-gold))] border-[hsl(var(--tom-gold))]'
-                  : 'text-[hsl(var(--tom-text-muted))] border-[hsl(var(--tom-border))] hover:text-[hsl(var(--tom-text))] hover:border-[hsl(var(--tom-gold-dim))]'
-              }`}
+              className="w-full flex flex-col items-center gap-1 py-1.5 rounded-md group hover:bg-[hsl(var(--tom-bg-surface))] transition-colors"
             >
-              {letter(a.name)}
-              {/* connection dot */}
+              {/* letter avatar with connection dot */}
               <span
-                className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-[#0a0a0a] ${
-                  a.status === 'online' || a.status === 'active' ? 'bg-emerald-400' : 'bg-zinc-500'
+                className={`relative w-9 h-9 flex items-center justify-center rounded-full text-sm font-bold border transition-all ${
+                  isOpen
+                    ? 'text-[#0a0a0a] bg-[hsl(var(--tom-gold))] border-[hsl(var(--tom-gold))]'
+                    : 'text-[hsl(var(--tom-text-muted))] border-[hsl(var(--tom-border))] group-hover:text-[hsl(var(--tom-text))] group-hover:border-[hsl(var(--tom-gold-dim))]'
                 }`}
-              />
-              {/* tooltip */}
-              <span className={`absolute ${tipPos} px-2 py-1 bg-[hsl(var(--tom-bg-surface))] border border-[hsl(var(--tom-border))] rounded text-xs text-[hsl(var(--tom-text))] whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50`}>
+              >
+                {letter(a.name)}
+                <span
+                  className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-[#0a0a0a] ${
+                    a.status === 'online' || a.status === 'active' ? 'bg-emerald-400' : 'bg-zinc-500'
+                  }`}
+                />
+              </span>
+              {/* name label */}
+              <span
+                className={`text-[9px] leading-tight max-w-full truncate px-0.5 ${
+                  isOpen ? 'text-[hsl(var(--tom-gold))]' : 'text-[hsl(var(--tom-text-muted))]'
+                }`}
+              >
                 {a.name}
               </span>
             </button>
