@@ -8,9 +8,12 @@ type Agent = { id: string; name: string; status?: string };
 
 const letter = (name: string) => (name || '?').trim().charAt(0).toUpperCase();
 
-export function AgentRail() {
+export function AgentRail({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { state } = useApp();
   const [openId, setOpenId] = useState<string | null>(null);
+  const isRight = side === 'right';
+  const railBorder = isRight ? 'border-l' : 'border-r';
+  const tipPos = isRight ? 'right-full mr-2' : 'left-full ml-2';
 
   const agents: Agent[] = ((state.sources as Agent[]) || []).map((s: any) => ({
     id: s.id ?? s.source_id,
@@ -21,9 +24,9 @@ export function AgentRail() {
   const active = agents.find((a) => a.id === openId) || null;
 
   return (
-    <div className="flex">
+    <div className={`flex ${isRight ? 'flex-row-reverse' : ''}`}>
       {/* The rail: one letter per AI */}
-      <div className="w-12 min-w-[48px] bg-[#0a0a0a] border-r border-[hsl(var(--tom-border))] flex flex-col items-center py-3 gap-1 z-20">
+      <div className={`w-12 min-w-[48px] bg-[#0a0a0a] ${railBorder} border-[hsl(var(--tom-border))] flex flex-col items-center py-3 gap-1 z-20`}>
         <div
           className="w-9 h-9 flex items-center justify-center rounded-md text-[hsl(var(--tom-gold))] mb-1"
           title="Your AIs"
@@ -53,7 +56,7 @@ export function AgentRail() {
                 }`}
               />
               {/* tooltip */}
-              <span className="absolute left-full ml-2 px-2 py-1 bg-[hsl(var(--tom-bg-surface))] border border-[hsl(var(--tom-border))] rounded text-xs text-[hsl(var(--tom-text))] whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+              <span className={`absolute ${tipPos} px-2 py-1 bg-[hsl(var(--tom-bg-surface))] border border-[hsl(var(--tom-border))] rounded text-xs text-[hsl(var(--tom-text))] whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50`}>
                 {a.name}
               </span>
             </button>
@@ -63,7 +66,7 @@ export function AgentRail() {
 
       {/* The panel that opens when you click a letter */}
       {active && (
-        <div className="w-64 bg-[hsl(var(--tom-bg-surface))] border-r border-[hsl(var(--tom-border))] flex flex-col z-10">
+        <div className={`w-64 bg-[hsl(var(--tom-bg-surface))] ${railBorder} border-[hsl(var(--tom-border))] flex flex-col z-10`}>
           <div className="p-3 border-b border-[hsl(var(--tom-border))] flex items-center gap-2">
             <span className="w-8 h-8 flex items-center justify-center rounded-full bg-[hsl(var(--tom-gold))] text-[#0a0a0a] text-sm font-bold">
               {letter(active.name)}

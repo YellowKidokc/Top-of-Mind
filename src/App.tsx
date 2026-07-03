@@ -55,9 +55,6 @@ function MainContent() {
       {/* 1. Far-left icon rail */}
       <IconRail />
 
-      {/* 1b. Agent rail: one letter per AI, click to open its panel */}
-      <AgentRail />
-
       {/* 2. Second sidebar (TypingMind-like) */}
       <Sidebar />
 
@@ -68,6 +65,9 @@ function MainContent() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {renderMainView()}
       </div>
+
+      {/* 5. Far-right agent rail (mirrors the icon rail): one letter per AI */}
+      <AgentRail side="right" />
 
       {/* Toast notifications */}
       <Toaster
