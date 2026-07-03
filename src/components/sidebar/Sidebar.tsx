@@ -9,7 +9,6 @@ import {
   Star,
   ArrowUpDown,
   SlidersHorizontal,
-  MessageSquare,
   Terminal,
   Bot,
   Cpu,

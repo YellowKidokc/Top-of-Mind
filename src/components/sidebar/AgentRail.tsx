@@ -13,7 +13,6 @@ export function AgentRail({ side = 'left' }: { side?: 'left' | 'right' }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const isRight = side === 'right';
   const railBorder = isRight ? 'border-l' : 'border-r';
-  const tipPos = isRight ? 'right-full mr-2' : 'left-full ml-2';
 
   const agents: Agent[] = ((state.sources as Agent[]) || []).map((s: any) => ({
     id: s.id ?? s.source_id,
