@@ -2,7 +2,7 @@ const DEFAULT_API_BASE = 'http://127.0.0.1:10000';
 const STORAGE_KEY = 'topOfMind.apiBaseUrl';
 
 export const NUMBERING = {
-  sources: { clipboard: 22001, ahk: 22002, codex: 20040, kimi: 20030, claude: 20010, gemini: 20020, cursor: 20050 },
+  sources: { clipboard: 22001, ahk: 22002, codex: 20040, kimi: 20030, claude: 20010, gemini: 20020, cursor: 20050, operator: 20060, topOfMind: 20070 },
   types: { normalChat: 30001, response: 30002, clipboardCapture: 32001 },
   priorities: { normal: 40003, high: 40007 },
   walls: { main: 50001, code: 50006 },
@@ -39,9 +39,14 @@ export const topOfMindApi = {
   createSource: (source) => request('/top-of-mind/sources', { method: 'POST', body: JSON.stringify(source) }),
   getMessages: (limit = 75) => request(`/top-of-mind/messages?${qs({ limit })}`),
   createMessage: (message) => request('/top-of-mind/messages', { method: 'POST', body: JSON.stringify(message) }),
+  saveClipboard: (payload) => request('/clipboard/save', { method: 'POST', body: JSON.stringify(payload) }),
+  sendAgent: (payload) => request('/agents/send', { method: 'POST', body: JSON.stringify(payload) }),
+  pushClipboard: (payload) => request('/clipboard/save', { method: 'POST', body: JSON.stringify({ ...payload, action: 'push_clipboard' }) }),
+  pullLatest: (payload = {}) => request('/top-of-mind/messages', { method: 'POST', body: JSON.stringify({ ...payload, action: 'pull_latest', dry_run: true }) }),
   updateMessage: (id, patch) => request(`/top-of-mind/messages/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   combine: (payload = {}) => request('/top-of-mind/combine', { method: 'POST', body: JSON.stringify(payload) }),
-  endAll: () => request('/top-of-mind/controls/end-all', { method: 'POST', body: JSON.stringify({}) }),
+  endAll: (payload = {}) => request('/top-of-mind/controls/end-all', { method: 'POST', body: JSON.stringify(payload) }),
+  hubHealth: () => request('/jobs/stats'),
   getFolders: () => request('/folders'),
   createFolder: (folder) => request('/folders', { method: 'POST', body: JSON.stringify(folder) }),
   createMemoryItem: (item) => request('/memory/items', { method: 'POST', body: JSON.stringify(item) }),
