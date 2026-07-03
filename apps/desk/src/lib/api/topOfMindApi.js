@@ -2,7 +2,7 @@ const DEFAULT_API_BASE = 'http://127.0.0.1:10000';
 const STORAGE_KEY = 'topOfMind.apiBaseUrl';
 
 export const NUMBERING = {
-  sources: { clipboard: 22001, ahk: 22002, codex: 20040, kimi: 20030 },
+  sources: { clipboard: 22001, ahk: 22002, codex: 20040, kimi: 20030, claude: 20010, gemini: 20020, cursor: 20050 },
   types: { normalChat: 30001, response: 30002, clipboardCapture: 32001 },
   priorities: { normal: 40003, high: 40007 },
   walls: { main: 50001, code: 50006 },
