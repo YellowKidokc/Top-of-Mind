@@ -1,0 +1,36 @@
+[2m1:11:43 AM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled rejection] [1mTypeError[22m: Failed to fetch
+[39m > request src/lib/api/topOfMindApi.js:4:26
+    2  |  
+    3  |  async function request(path, options = {}) {
+    4  |    const response = await fetch(`${API_BASE}${path}`, {
+       |                            ^
+    5  |      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    6  |      ...options,
+ > Object.endAll src/lib/api/topOfMindApi.js:21:17
+ > onClick src/main.jsx:20:989
+ > executeDispatch node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+ > runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+ > processDispatchQueue node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+ > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+ > batchedUpdates$1 node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+ > dispatchEventForPluginEventSystem node_modules/react-dom/cjs/react-dom-client.development.js:19320:6
+ > dispatchEvent node_modules/react-dom/cjs/react-dom-client.development.js:23585:10
+
+[2m1:11:43 AM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled rejection] [1mTypeError[22m: Failed to fetch
+[39m > request src/lib/api/topOfMindApi.js:4:26
+    2  |  
+    3  |  async function request(path, options = {}) {
+    4  |    const response = await fetch(`${API_BASE}${path}`, {
+       |                            ^
+    5  |      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    6  |      ...options,
+ > Object.combine src/lib/api/topOfMindApi.js:20:25
+ > onClick src/main.jsx:20:1051
+ > executeDispatch node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+ > runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+ > processDispatchQueue node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+ > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+ > batchedUpdates$1 node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+ > dispatchEventForPluginEventSystem node_modules/react-dom/cjs/react-dom-client.development.js:19320:6
+ > dispatchEvent node_modules/react-dom/cjs/react-dom-client.development.js:23585:10
+
