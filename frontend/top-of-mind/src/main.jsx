@@ -6,6 +6,9 @@ import { WorkspaceSidebar } from './components/sidebar/WorkspaceSidebar';
 import { KnowledgePanel } from './components/knowledge/KnowledgePanel';
 import { PromptsPanel } from './components/prompts/PromptsPanel';
 import { SettingsPanel } from './components/settings/SettingsPanel';
+import { ModelsPanel } from './components/models/ModelsPanel';
+import { PluginsPanel } from './components/plugins/PluginsPanel';
+import { AgentsPanel } from './components/agents/AgentsPanel';
 import { topOfMindApi } from './lib/api/topOfMindApi';
 import './styles.css';
 
@@ -198,8 +201,11 @@ function App() {
 
         {/* Panel Switcher */}
         {activePanel === 'knowledge' && <KnowledgePanel />}
-        {activePanel === 'prompts' && <PromptsPanel onCopyToComposer={(p) => setInput(p)} />}
+        {activePanel === 'prompts' && <PromptsPanel onCopyToComposer={(p) => { setInput(p); setActivePanel('chats'); }} />}
         {activePanel === 'settings' && <SettingsPanel />}
+        {activePanel === 'models' && <ModelsPanel />}
+        {activePanel === 'plugins' && <PluginsPanel />}
+        {activePanel === 'agents' && <AgentsPanel />}
 
         {activePanel === 'chats' && (
           <div className="stream-container">
