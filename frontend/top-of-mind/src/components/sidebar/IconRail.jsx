@@ -2,7 +2,9 @@ import { navIcons, SourceAvatar } from '../icons/AppIcons';
 import { User } from 'lucide-react';
 
 const nav = [
-  ['chats', 'Chats'],
+  ['chats', 'Chats & Split Lanes'],
+  ['notepad', 'Markdown Notepad'],
+  ['rag', 'Vectorization & RAG Engine'],
   ['agents', 'Agents'],
   ['prompts', 'Prompts'],
   ['plugins', 'Plugins'],

@@ -1116,3 +1116,124 @@ button {
   gap: 10px;
   margin-top: 10px;
 }
+/* Notepad layout */
+.notepad-view-container {
+  flex: 1;
+  display: flex;
+  height: calc(100vh - 52px);
+  overflow: hidden;
+  background: var(--tom-bg);
+}
+
+.notepad-sidebar-col {
+  width: 260px;
+  border-right: 1px solid var(--tom-border);
+  background: #090909;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 12px;
+}
+
+.notepad-editor-col {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.notepad-editor-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 16px;
+  max-width: 900px;
+  width: 100%;
+}
+
+.notepad-textarea {
+  flex: 1;
+  min-height: 480px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* RAG Vector layout */
+.rag-view-container {
+  flex: 1;
+  display: flex;
+  height: calc(100vh - 52px);
+  overflow: hidden;
+  background: var(--tom-bg);
+}
+
+.rag-sidebar-col {
+  width: 280px;
+  border-right: 1px solid var(--tom-border);
+  background: #090909;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 12px;
+}
+
+.rag-content-col {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 960px;
+}
+
+.rag-search-row {
+  display: flex;
+  gap: 10px;
+}
+
+.rag-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.rag-result-card {
+  background: #111111;
+  border: 1px solid var(--tom-border);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rag-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rag-source-path {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tom-gold);
+  font-family: ui-monospace, monospace;
+}
+
+.rag-score {
+  font-size: 11px;
+  color: var(--tom-green);
+  background: #122116;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #22c55e33;
+}
+
+.rag-result-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--tom-text);
+  line-height: 1.5;
+}

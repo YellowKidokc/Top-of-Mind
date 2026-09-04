@@ -28,7 +28,21 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-export const navIcons = { chats: MessageSquare, agents: Bot, prompts: Sparkles, models: BrainCircuit, tools: Plug, knowledge: Folder, settings: Settings, search: Search, newChat: Plus, folders: Folder };
+export const navIcons = {
+  chats: MessageSquare,
+  notepad: FileText,
+  rag: Database,
+  agents: Bot,
+  prompts: Sparkles,
+  models: BrainCircuit,
+  tools: Plug,
+  plugins: Plug,
+  knowledge: Folder,
+  settings: Settings,
+  search: Search,
+  newChat: Plus,
+  folders: Folder
+};
 export const sourceMeta = { kimi: { label: 'Kimi', initials: 'Ki', icon: Bot, tone: 'cyan' }, codex: { label: 'Codex', initials: 'Cx', icon: Wrench, tone: 'blue' }, claude: { label: 'Claude', initials: 'Cl', icon: Sparkles, tone: 'orange' }, gpt: { label: 'GPT', initials: 'GPT', icon: BrainCircuit, tone: 'green' }, clipboard: { label: 'Clipboard', initials: 'Cb', icon: Clipboard, tone: 'slate' }, autohotkey: { label: 'AutoHotkey bridge', initials: 'AHK', icon: Keyboard, tone: 'purple' }, ocr: { label: 'OCR bridge', initials: 'OCR', icon: Image, tone: 'pink' } };
 export const statusMeta = { online: { label: 'online', icon: CheckCircle2, tone: 'online' }, ready: { label: 'online', icon: CheckCircle2, tone: 'online' }, paused: { label: 'paused', icon: PauseCircle, tone: 'paused' }, idle: { label: 'paused', icon: PauseCircle, tone: 'paused' }, muted: { label: 'muted', icon: VolumeX, tone: 'muted' }, 'needs review': { label: 'needs review', icon: AlertTriangle, tone: 'review' }, needs_review: { label: 'needs review', icon: AlertTriangle, tone: 'review' }, error: { label: 'error', icon: XCircle, tone: 'error' } };
 export const fileTypeIcons = { markdown: FileText, text: FileText, pdf: FileType, image: FileImage, audio: FileAudio, video: FileVideo, transcript: Mic, folder: Folder };

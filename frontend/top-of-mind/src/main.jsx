@@ -9,6 +9,8 @@ import { SettingsPanel } from './components/settings/SettingsPanel';
 import { ModelsPanel } from './components/models/ModelsPanel';
 import { PluginsPanel } from './components/plugins/PluginsPanel';
 import { AgentsPanel } from './components/agents/AgentsPanel';
+import { NotepadPanel } from './components/notepad/NotepadPanel';
+import { RagVectorPanel } from './components/rag/RagVectorPanel';
 import { topOfMindApi } from './lib/api/topOfMindApi';
 import './styles.css';
 
@@ -201,6 +203,8 @@ function App() {
 
         {/* Panel Switcher */}
         {activePanel === 'knowledge' && <KnowledgePanel />}
+        {activePanel === 'notepad' && <NotepadPanel onSendToComposer={(text) => { setInput(text); setActivePanel('chats'); }} />}
+        {activePanel === 'rag' && <RagVectorPanel />}
         {activePanel === 'prompts' && <PromptsPanel onCopyToComposer={(p) => { setInput(p); setActivePanel('chats'); }} />}
         {activePanel === 'settings' && <SettingsPanel />}
         {activePanel === 'models' && <ModelsPanel />}
@@ -235,9 +239,28 @@ function App() {
                             </option>
                           ))}
                         </select>
-                        <span style={{ fontSize: '11px', color: 'var(--tom-text-dim)' }}>
-                          Lane {colIndex + 1}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: '11px', color: 'var(--tom-text-dim)' }}>
+                            Lane {colIndex + 1}
+                          </span>
+                          <button
+                            className="sidebar-toggle-btn"
+                            title={`Kick/remove ${currentModel} from active broadcast lane`}
+                            style={{ padding: '2px 5px', fontSize: '11px', color: 'var(--tom-text-dim)' }}
+                            onClick={() => {
+                              // Switch lane or drop to fewer columns
+                              if (splitMode === 'split-4' && colIndex === 3) {
+                                setSplitMode('split-3');
+                              } else if (splitMode === 'split-3' && colIndex === 2) {
+                                setSplitMode('single');
+                              } else {
+                                setColumnModels((prev) => ({ ...prev, [colKey]: 'ollama' }));
+                              }
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
 
                       <div className="column-stream">
