@@ -289,6 +289,12 @@ button {
   padding-left: 24px;
 }
 
+.chat-row.selected {
+  background: #17150c;
+  color: var(--tom-gold);
+  font-weight: 600;
+}
+
 /* Main Area */
 .main {
   flex: 1;
@@ -1236,4 +1242,35 @@ button {
   font-size: 13px;
   color: var(--tom-text);
   line-height: 1.5;
+}
+/* Code Blocks styling inside MessageCard */
+.code-block-container {
+  background: #080808;
+  border: 1px solid var(--tom-border);
+  border-radius: 8px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 10px;
+  background: #141414;
+  border-bottom: 1px solid var(--tom-border);
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  color: var(--tom-text-dim);
+  text-transform: lowercase;
+}
+
+.code-pre {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #f3f4f6;
 }

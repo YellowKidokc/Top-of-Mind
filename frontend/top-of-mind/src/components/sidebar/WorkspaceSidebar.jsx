@@ -26,7 +26,7 @@ const folderTree = [
   }
 ];
 
-function FolderNode({ node, depth = 0, query, selectedFolder, setSelectedFolder }) {
+function FolderNode({ node, depth = 0, query, selectedFolder, setSelectedFolder, onSelectChat, activeChat }) {
   const [open, setOpen] = useState(true);
   const chats = node.chats.filter((c) => c.toLowerCase().includes(query.toLowerCase()));
 
@@ -52,7 +52,11 @@ function FolderNode({ node, depth = 0, query, selectedFolder, setSelectedFolder 
       {open && (
         <div>
           {chats.map((chat) => (
-            <button className="chat-row" key={chat}>
+            <button
+              className={`chat-row ${activeChat === chat ? 'selected' : ''}`}
+              key={chat}
+              onClick={() => onSelectChat && onSelectChat(chat, node.id)}
+            >
               <MessageSquare size={12} style={{ opacity: 0.6 }} />
               <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {chat}
@@ -67,6 +71,8 @@ function FolderNode({ node, depth = 0, query, selectedFolder, setSelectedFolder 
               query={query}
               selectedFolder={selectedFolder}
               setSelectedFolder={setSelectedFolder}
+              onSelectChat={onSelectChat}
+              activeChat={activeChat}
             />
           ))}
         </div>
@@ -83,7 +89,9 @@ export function WorkspaceSidebar({
   setQuery,
   selectedFolder,
   setSelectedFolder,
-  onNewChat
+  onNewChat,
+  onSelectChat,
+  activeChat
 }) {
   const [filterMode, setFilterMode] = useState('all');
 
@@ -168,6 +176,8 @@ export function WorkspaceSidebar({
               query={query}
               selectedFolder={selectedFolder}
               setSelectedFolder={setSelectedFolder}
+              onSelectChat={onSelectChat}
+              activeChat={activeChat}
             />
           ))}
         </section>

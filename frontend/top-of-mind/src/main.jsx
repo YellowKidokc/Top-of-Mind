@@ -11,6 +11,7 @@ import { PluginsPanel } from './components/plugins/PluginsPanel';
 import { AgentsPanel } from './components/agents/AgentsPanel';
 import { NotepadPanel } from './components/notepad/NotepadPanel';
 import { RagVectorPanel } from './components/rag/RagVectorPanel';
+import { MessageCard } from './components/chat/MessageCard';
 import { topOfMindApi } from './lib/api/topOfMindApi';
 import './styles.css';
 
@@ -32,6 +33,7 @@ function App() {
   const [activePanel, setActivePanel] = useState('chats');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState('inbox');
+  const [activeChat, setActiveChat] = useState('Morning triage');
   const [online, setOnline] = useState(false);
   const [status, setStatus] = useState('');
 
@@ -153,6 +155,12 @@ function App() {
         selectedFolder={selectedFolder}
         setSelectedFolder={setSelectedFolder}
         onNewChat={handleNewChat}
+        activeChat={activeChat}
+        onSelectChat={(chatName, folderId) => {
+          setActiveChat(chatName);
+          setSelectedFolder(folderId);
+          setActivePanel('chats');
+        }}
       />
 
       {/* 3. Main Workspace Area */}
@@ -263,27 +271,14 @@ function App() {
                         </div>
                       </div>
 
-                      <div className="column-stream">
+                       <div className="column-stream">
                         {colMessages.length === 0 ? (
                           <div className="empty-canvas" style={{ padding: '20px' }}>
                             <p>Ready for prompt.</p>
                           </div>
                         ) : (
                           colMessages.map((m, i) => (
-                            <div
-                              key={m.id || i}
-                              className={`message-card ${m.role === 'user' ? 'user' : ''}`}
-                            >
-                              <div className="message-card-header">
-                                <span className="message-card-author">
-                                  {m.role === 'user' ? 'You' : m.source || currentModel}
-                                </span>
-                                <span>{m.created_at || ''}</span>
-                              </div>
-                              <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                                {m.content || m.body}
-                              </p>
-                            </div>
+                            <MessageCard key={m.id || i} message={m} />
                           ))
                         )}
                       </div>
@@ -309,16 +304,7 @@ function App() {
                 </div>
                 <div className="column-stream" style={{ flex: 1 }}>
                   {filteredMessages.map((m, i) => (
-                    <div
-                      key={m.id || i}
-                      className={`message-card ${m.role === 'user' ? 'user' : ''}`}
-                    >
-                      <div className="message-card-header">
-                        <span className="message-card-author">{m.role === 'user' ? 'You' : m.source}</span>
-                        <span>{m.created_at || ''}</span>
-                      </div>
-                      <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{m.content || m.body}</p>
-                    </div>
+                    <MessageCard key={m.id || i} message={m} />
                   ))}
                 </div>
               </div>
@@ -334,16 +320,7 @@ function App() {
                   </div>
                 ) : (
                   filteredMessages.map((m, i) => (
-                    <div
-                      key={m.id || i}
-                      className={`message-card ${m.role === 'user' ? 'user' : ''}`}
-                    >
-                      <div className="message-card-header">
-                        <span className="message-card-author">{m.role === 'user' ? 'You' : m.source}</span>
-                        <span>{m.created_at || ''}</span>
-                      </div>
-                      <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{m.content || m.body}</p>
-                    </div>
+                    <MessageCard key={m.id || i} message={m} />
                   ))
                 )}
               </div>
