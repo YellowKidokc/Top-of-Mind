@@ -14,21 +14,21 @@ export function SettingsPanel() {
         <div className="models-pane-title">Settings</div>
         <div className="models-cat-list">
           <button
-            className={models-cat-item }
+            className="models-cat-item"
             onClick={() => setActiveTab('storage')}
           >
             <div className="cat-label">App Data & Storage</div>
             <div className="cat-count">Local Cache</div>
           </button>
           <button
-            className={models-cat-item }
+            className="models-cat-item"
             onClick={() => setActiveTab('bridge')}
           >
             <div className="cat-label">AHK & Hub Bridge</div>
             <div className="cat-count">Desktop Control</div>
           </button>
           <button
-            className={models-cat-item }
+            className="models-cat-item"
             onClick={() => setActiveTab('vault')}
           >
             <div className="cat-label">Theophysics Vault</div>

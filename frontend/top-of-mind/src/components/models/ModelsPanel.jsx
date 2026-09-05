@@ -50,7 +50,7 @@ export function ModelsPanel() {
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
-              className={models-cat-item }
+              className="models-cat-item"
               onClick={() => setSelectedCat(cat.id)}
             >
               <div className="cat-label">{cat.label}</div>
@@ -80,7 +80,7 @@ export function ModelsPanel() {
             return (
               <div
                 key={m.id}
-                className={model-list-card }
+                className="model-list-card"
                 onClick={() => setSelectedModel(m)}
               >
                 <div className="model-card-info">

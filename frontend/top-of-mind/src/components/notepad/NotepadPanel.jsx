@@ -73,7 +73,7 @@ export function NotepadPanel({ onSendToComposer }) {
           {notes.map((n) => (
             <div
               key={n.id}
-              className={model-list-card }
+              className="model-list-card"
               onClick={() => setActiveNoteId(n.id)}
             >
               <div className="model-card-info">

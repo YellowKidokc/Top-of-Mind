@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Columns3, Grid2X2, MessageSquare, Send, Paperclip, Mic, Sparkles, SlidersHorizontal, RefreshCw, XCircle } from 'lucide-react';
+import { Columns3, Grid2X2, MessageSquare, Send, Paperclip, Mic, Sparkles, SlidersHorizontal, RefreshCw, XCircle, Bot, Layers, ArrowRightLeft, FolderGit2 } from 'lucide-react';
 import { IconRail } from './components/sidebar/IconRail';
 import { WorkspaceSidebar } from './components/sidebar/WorkspaceSidebar';
 import { KnowledgePanel } from './components/knowledge/KnowledgePanel';
@@ -17,9 +17,12 @@ import './styles.css';
 
 const fallbackSources = [
   { id: 'claude', name: 'Claude 3.7 Sonnet', status: 'online' },
+  { id: 'opus', name: 'Claude 3.5 Opus', status: 'online' },
+  { id: 'gemini', name: 'Gemini 3.8 Flash', status: 'online' },
+  { id: 'gpt', name: 'GPT-5.4', status: 'online' },
   { id: 'deepseek', name: 'DeepSeek R1 / V3', status: 'online' },
   { id: 'kimi', name: 'Kimi 2.5', status: 'online' },
-  { id: 'gpt', name: 'GPT-5.4', status: 'online' },
+  { id: 'codex', name: 'Codex CLI / Terminal', status: 'online' },
   { id: 'ollama', name: 'Local Ollama', status: 'online' },
   { id: 'ahk', name: 'AutoHotkey Bridge', status: 'online' },
   { id: 'clipboard', name: 'Clipboard Lane', status: 'online' }
@@ -325,6 +328,79 @@ function App() {
                 )}
               </div>
             )}
+
+            {/* 4. Right-Hand Conversation Convergence & Model Folders Dock */}
+            <aside className="conversation-right-dock">
+              <div className="dock-header">
+                <div className="dock-title">Chat Convergence & Routing</div>
+                <div className="dock-convergence-actions">
+                  <button
+                    className="dock-action-btn"
+                    onClick={() => {
+                      // Combine active lane messages into synthesis
+                      topOfMindApi.combine({ folder: selectedFolder, chat: activeChat });
+                      const combined = {
+                        id: `synth-${Date.now()}`,
+                        role: 'assistant',
+                        source: 'Synthesis Engine',
+                        content: `[SYNTHESIS CONVERGENCE] Merged context across all active lanes for "${activeChat}". Consensus aligned.`,
+                        created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      };
+                      setMessages((prev) => [...prev, combined]);
+                    }}
+                  >
+                    <span>Combine All Chats</span>
+                    <Layers size={13} style={{ color: 'var(--tom-gold)' }} />
+                  </button>
+
+                  <button
+                    className="dock-action-btn"
+                    onClick={() => {
+                      const joined = {
+                        id: `join-${Date.now()}`,
+                        role: 'assistant',
+                        source: 'Lane Bridge',
+                        content: `Linked lane 1 and lane 2 into shared context memory.`,
+                        created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      };
+                      setMessages((prev) => [...prev, joined]);
+                    }}
+                  >
+                    <span>Join Selected Chats</span>
+                    <ArrowRightLeft size={13} style={{ color: 'var(--tom-green)' }} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="dock-model-folders">
+                <div className="sidebar-section-title" style={{ padding: '4px 6px', margin: '4px 0' }}>
+                  <span>Dedicated Model Folders</span>
+                  <span>{sources.length}</span>
+                </div>
+                {sources.map((src) => {
+                  const isActiveInLane = Object.values(columnModels).includes(src.id);
+                  return (
+                    <button
+                      key={src.id}
+                      className={`dock-folder-item ${isActiveInLane ? 'active' : ''}`}
+                      onClick={() => {
+                        // Switch active lane 0 to this model and set folder
+                        setColumnModels((prev) => ({ ...prev, col0: src.id }));
+                        setSelectedFolder(src.id);
+                      }}
+                    >
+                      <Bot size={13} style={{ color: isActiveInLane ? 'var(--tom-gold)' : 'inherit' }} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {src.name}
+                      </span>
+                      <span className="dock-badge">
+                        {isActiveInLane ? 'Active' : 'Standby'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </aside>
           </div>
         )}
 

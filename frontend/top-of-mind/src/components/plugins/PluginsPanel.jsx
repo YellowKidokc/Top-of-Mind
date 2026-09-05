@@ -36,14 +36,14 @@ export function PluginsPanel() {
         <div className="models-pane-title">Plugin Store</div>
         <div className="models-cat-list">
           <button
-            className={models-cat-item }
+            className="models-cat-item"
             onClick={() => setTab('all')}
           >
             <div className="cat-label">Store & Discovery</div>
             <div className="cat-count">{plugins.length} available</div>
           </button>
           <button
-            className={models-cat-item }
+            className="models-cat-item"
             onClick={() => setTab('installed')}
           >
             <div className="cat-label">Installed Tools</div>
@@ -84,7 +84,7 @@ export function PluginsPanel() {
                     <div className="plugin-author">By {p.author}</div>
                   </div>
                   <button
-                    className={plugin-btn }
+                    className="plugin-btn"
                     onClick={() => toggleInstall(p.id)}
                   >
                     {p.installed ? (

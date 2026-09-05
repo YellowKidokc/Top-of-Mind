@@ -83,7 +83,7 @@ export function PromptsPanel({ onCopyToComposer }) {
           {filtered.map((p) => (
             <div
               key={p.id}
-              className={model-list-card }
+              className="model-list-card"
               onClick={() => setSelectedPrompt(p)}
             >
               <div className="model-card-info">

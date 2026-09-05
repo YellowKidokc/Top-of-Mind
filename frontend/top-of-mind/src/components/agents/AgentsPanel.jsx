@@ -42,7 +42,7 @@ export function AgentsPanel() {
           {agents.map((ag) => (
             <div
               key={ag.id}
-              className={model-list-card }
+              className="model-list-card"
               onClick={() => setSelectedAgent(ag)}
             >
               <div className="model-card-info">
