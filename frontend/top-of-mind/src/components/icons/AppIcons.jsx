@@ -26,6 +26,7 @@ import {
   CircleDot,
   ChevronDown,
   ChevronRight,
+  Database,
 } from 'lucide-react';
 
 export const navIcons = {

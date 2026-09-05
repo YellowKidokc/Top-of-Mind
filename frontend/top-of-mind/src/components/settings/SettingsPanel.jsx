@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Database, Download, Upload, Trash2, HardDrive, RefreshCw, Key, Shield, ExternalLink, Sparkles } from 'lucide-react';
 
 export function SettingsPanel() {
@@ -139,7 +139,7 @@ export function SettingsPanel() {
                 className="search-box"
                 style={{ width: '100%', marginTop: 6, background: '#121212' }}
                 readOnly
-                value="Z:\Theophysics_Vault\07_System_and_Operations\AG_Lexicon_Intake\AG_SORTING_TERMS_INTAKE.csv"
+                value="Z:\\Theophysics_Vault\\07_System_and_Operations\\AG_Lexicon_Intake\\AG_SORTING_TERMS_INTAKE.csv"
               />
             </div>
           </div>
