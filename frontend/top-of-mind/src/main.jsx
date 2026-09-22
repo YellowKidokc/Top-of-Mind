@@ -148,25 +148,7 @@ function App() {
         sources={sources}
       />
 
-      {/* 2. Middle Workspace Sidebar */}
-      <WorkspaceSidebar
-        collapsed={sidebarCollapsed}
-        setCollapsed={setSidebarCollapsed}
-        activePanel={activePanel}
-        query={query}
-        setQuery={setQuery}
-        selectedFolder={selectedFolder}
-        setSelectedFolder={setSelectedFolder}
-        onNewChat={handleNewChat}
-        activeChat={activeChat}
-        onSelectChat={(chatName, folderId) => {
-          setActiveChat(chatName);
-          setSelectedFolder(folderId);
-          setActivePanel('chats');
-        }}
-      />
-
-      {/* 3. Main Workspace Area */}
+      {/* 2. Main Workspace Area */}
       <main className="main">
         {/* Top bar with Split Mode Controls */}
         <header className="topbar">
@@ -329,7 +311,7 @@ function App() {
               </div>
             )}
 
-            {/* 4. Right-Hand Conversation Convergence & Model Folders Dock */}
+            {/* Right-Hand Conversation Convergence & Model Folders Dock */}
             <aside className="conversation-right-dock">
               <div className="dock-header">
                 <div className="dock-title">Chat Convergence & Routing</div>
@@ -338,7 +320,8 @@ function App() {
                     className="dock-action-btn"
                     onClick={() => {
                       // Combine active lane messages into synthesis
-                      topOfMindApi.combine({ folder: selectedFolder, chat: activeChat });
+                      topOfMindApi.combine({ folder: selectedFolder, chat: activeChat })
+                        .catch(() => {});
                       const combined = {
                         id: `synth-${Date.now()}`,
                         role: 'assistant',
@@ -404,13 +387,13 @@ function App() {
           </div>
         )}
 
-        {/* 4. Bottom Composer */}
+        {/* 3. Bottom Composer */}
         <footer className="composer-area">
           <div className="composer-toolbar">
             <div className="composer-left-actions">
               <button
                 className="action-pill-btn"
-                onClick={() => topOfMindApi.combine({ folder: selectedFolder })}
+                onClick={() => topOfMindApi.combine({ folder: selectedFolder }).catch(() => {})}
                 title="Combine active streams into synthesis"
               >
                 <Sparkles size={12} />
@@ -428,7 +411,7 @@ function App() {
                 className="action-pill-btn danger"
                 onClick={() => {
                   if (confirm('End all conversations?')) {
-                    topOfMindApi.endAll();
+                    topOfMindApi.endAll().catch(() => {});
                     setMessages([]);
                   }
                 }}
@@ -441,6 +424,7 @@ function App() {
 
             <div style={{ fontSize: '11px', color: 'var(--tom-text-dim)' }}>
               Folder: <b>{selectedFolder}</b> · Broadcast: <b>{splitMode.toUpperCase()}</b>
+              {status ? <span style={{ marginLeft: 8, color: 'var(--tom-gold-dim)' }}>{status}</span> : null}
             </div>
           </div>
 
@@ -475,6 +459,24 @@ function App() {
           </div>
         </footer>
       </main>
+
+      {/* 4. Right Workspace Sidebar (Conversations) — collapsible, mirrors old left bar */}
+      <WorkspaceSidebar
+        collapsed={sidebarCollapsed}
+        setCollapsed={setSidebarCollapsed}
+        activePanel={activePanel}
+        query={query}
+        setQuery={setQuery}
+        selectedFolder={selectedFolder}
+        setSelectedFolder={setSelectedFolder}
+        onNewChat={handleNewChat}
+        activeChat={activeChat}
+        onSelectChat={(chatName, folderId) => {
+          setActiveChat(chatName);
+          setSelectedFolder(folderId);
+          setActivePanel('chats');
+        }}
+      />
     </div>
   );
 }
