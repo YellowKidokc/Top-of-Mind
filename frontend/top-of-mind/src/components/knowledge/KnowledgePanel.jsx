@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Database, Plus, Search, Folder, FileText, Check, Upload, Trash2, HardDrive, RefreshCw, Sparkles, ArrowRight, Shield, Globe } from 'lucide-react';
 import { fileTypeIcons } from '../icons/AppIcons';
 
@@ -99,7 +99,7 @@ export function KnowledgePanel() {
           {filtered.map((kb) => (
             <div
               key={kb.id}
-              className={model-list-card }
+              className={`model-list-card ${selectedKb?.id === kb.id ? 'selected' : ''}`}
               onClick={() => setSelectedKb(kb)}
             >
               <div className="model-card-info">
@@ -171,7 +171,7 @@ export function KnowledgePanel() {
                       <FileText size={14} style={{ color: 'var(--tom-gold)' }} />
                       <span style={{ fontSize: 13, color: 'var(--tom-text)' }}>{f.name}</span>
                     </div>
-                    <span style={{ fontSize: 11, color: 'var(--tom-text-dim)' }}>{f.size}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--tom-text-dim)' }}>{f.size}</span>
                   </div>
                 ))}
               </div>

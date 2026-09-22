@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Copy, Check, Sparkles, Terminal, ArrowUpRight, Share2, ThumbsUp } from 'lucide-react';
 import { SourceAvatar } from '../icons/AppIcons';
 
@@ -13,11 +13,11 @@ export function MessageCard({ message, onCopy, onSendToNote }) {
     setTimeout(() => setCopied(false), 1400);
   }
 
-  // Parse simple code blocks `code`
-  const parts = text.split(/(`[\s\S]*?`)/g);
+  // Parse fenced code blocks ```code```
+  const parts = text.split(/(```[\s\S]*?```)/g);
 
   return (
-    <article className={message-card }>
+    <article className={`message-card ${isUser ? 'user' : ''}`}>
       <div className="message-card-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {!isUser && <SourceAvatar source={message.source || 'AI'} compact />}
@@ -42,7 +42,7 @@ export function MessageCard({ message, onCopy, onSendToNote }) {
 
       <div className="message-body">
         {parts.map((part, idx) => {
-          if (part.startsWith('`') && part.endsWith('`')) {
+          if (part.startsWith('```') && part.endsWith('```')) {
             const lines = part.slice(3, -3).trim().split('\n');
             const lang = lines[0] && !lines[0].includes(' ') ? lines[0] : '';
             const code = lang ? lines.slice(1).join('\n') : lines.join('\n');

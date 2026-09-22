@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Search, Plus, Sliders, Check, Settings, Sparkles, ExternalLink, Globe, Code, FileText, Cpu, Wrench } from 'lucide-react';
 
 const CATEGORIES = [
@@ -13,11 +13,11 @@ const CATEGORIES = [
 ];
 
 const MODEL_LIST = [
-  { id: 'claude-3-7', cat: 'anthropic', name: 'Claude 3.7 Sonnet', context: '1,000,000', provider: 'Anthropic', enabled: true, release: '2026-03-01', pricing: ' / ', features: ['Vision', 'Streaming', 'Thinking mode', 'Background mode', 'Plugins'] },
-  { id: 'deepseek-r1', cat: 'deepseek', name: 'DeepSeek R1 / V3', context: '128,000', provider: 'DeepSeek', enabled: true, release: '2026-01-20', pricing: '.55 / .19', features: ['Reasoning', 'Streaming', 'Code Sandbox'] },
-  { id: 'kimi-2-5', cat: 'moonshot', name: 'Kimi 2.5', context: '2,000,000', provider: 'Moonshot', enabled: true, release: '2026-02-15', pricing: '.00 / .00', features: ['Long Context', 'Vision', 'Web Search'] },
-  { id: 'gpt-5-4', cat: 'openai', name: 'GPT-5.4', context: '1,050,000', provider: 'OpenAI', enabled: true, release: '2026-03-05', pricing: '.50 / ', features: ['Plugins', 'Vision', 'Prompt caching', 'Thinking mode', 'Web Browser'] },
-  { id: 'gemini-3-8', cat: 'google', name: 'Gemini 3.8 Flash', context: '1,000,000', provider: 'Google', enabled: true, release: '2026-02-28', pricing: '.15 / .60', features: ['Multimodal', 'Streaming', 'Fast Execution'] },
+  { id: 'claude-3-7', cat: 'anthropic', name: 'Claude 3.7 Sonnet', context: '1,000,000', provider: 'Anthropic', enabled: true, release: '2026-03-01', pricing: '$3 / $15', features: ['Vision', 'Streaming', 'Thinking mode', 'Background mode', 'Plugins'] },
+  { id: 'deepseek-r1', cat: 'deepseek', name: 'DeepSeek R1 / V3', context: '128,000', provider: 'DeepSeek', enabled: true, release: '2026-01-20', pricing: '$0.55 / $2.19', features: ['Reasoning', 'Streaming', 'Code Sandbox'] },
+  { id: 'kimi-2-5', cat: 'moonshot', name: 'Kimi 2.5', context: '2,000,000', provider: 'Moonshot', enabled: true, release: '2026-02-15', pricing: '$0.00 / $0.00', features: ['Long Context', 'Vision', 'Web Search'] },
+  { id: 'gpt-5-4', cat: 'openai', name: 'GPT-5.4', context: '1,050,000', provider: 'OpenAI', enabled: true, release: '2026-03-05', pricing: '$2.50 / $10', features: ['Plugins', 'Vision', 'Prompt caching', 'Thinking mode', 'Web Browser'] },
+  { id: 'gemini-3-8', cat: 'google', name: 'Gemini 3.8 Flash', context: '1,000,000', provider: 'Google', enabled: true, release: '2026-02-28', pricing: '$0.15 / $0.60', features: ['Multimodal', 'Streaming', 'Fast Execution'] },
   { id: 'ollama-local', cat: 'ollama', name: 'Local Ollama (Llama 3.3)', context: '32,000', provider: 'Local (127.0.0.1:11434)', enabled: true, release: 'Local', pricing: 'Free / Local GPU', features: ['Offline', 'Zero Latency', 'Private'] },
   { id: 'ahk-bridge', cat: 'ahk', name: 'AHK Desktop Dispatcher', context: 'Native Windows', provider: 'AutoHotkey v2', enabled: true, release: 'Local Service', pricing: 'Local Inter-Process', features: ['Window Focus', 'Clipboard Send', 'Auto-Type Enter'] }
 ];
@@ -88,7 +88,7 @@ export function ModelsPanel() {
                   <div className="model-card-meta">{m.context} tokens · {m.provider}</div>
                 </div>
                 <div
-                  className={model-toggle-pill }
+                  className={`model-toggle-pill ${m.enabled ? 'enabled' : ''}`}
                   onClick={(e) => toggleModel(m.id, e)}
                   title="Toggle active model lane"
                 >

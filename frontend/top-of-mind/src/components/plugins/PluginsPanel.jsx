@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Search, Plus, Check, Globe, Code, Calculator, BarChart3, Image, SearchCode, Database, Terminal, Zap } from 'lucide-react';
 
 const INITIAL_PLUGINS = [
@@ -9,7 +9,7 @@ const INITIAL_PLUGINS = [
   { id: 'deep-research', name: 'Deep Research', desc: 'Perform in-depth multi-turn search and compile final briefs.', icon: SearchCode, installed: true, author: 'Top of Mind' },
   { id: 'web-browser', name: 'Web Browser & Scraper', desc: 'Real-time live URL fetch and markdown extraction.', icon: Globe, installed: false, author: 'System' },
   { id: 'mcp-bridge', name: 'Model Context Protocol (MCP)', desc: 'Connect to local SQLite, filesystem, and tool servers.', icon: Terminal, installed: false, author: 'Anthropic / MCP' },
-  { id: 'vault-connector', name: 'Theophysics Vault Connector', desc: 'Direct indexing and semantic query to Z:\Theophysics_Vault.', icon: Database, installed: true, author: 'David OS' }
+  { id: 'vault-connector', name: 'Theophysics Vault Connector', desc: 'Direct indexing and semantic query to Z:\\Theophysics_Vault.', icon: Database, installed: true, author: 'David OS' }
 ];
 
 export function PluginsPanel() {

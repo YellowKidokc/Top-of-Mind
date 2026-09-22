@@ -101,9 +101,9 @@ export function WorkspaceSidebar({
         className="sidebar-toggle-btn floating"
         title="Open Sidebar"
         onClick={() => setCollapsed(false)}
-        style={{ position: 'absolute', left: '56px', top: '12px', zIndex: 10 }}
+        style={{ position: 'absolute', right: '12px', top: '64px', zIndex: 10 }}
       >
-        <span>⇥</span>
+        <span>⇤</span>
       </button>
     );
   }
@@ -111,16 +111,16 @@ export function WorkspaceSidebar({
   return (
     <aside className="workspace-sidebar">
       <div className="sidebar-header">
-        <span className="sidebar-title">
-          {activePanel === 'chats' ? 'Conversations' : activePanel}
-        </span>
         <button
           className="sidebar-toggle-btn"
           title="Collapse Sidebar"
           onClick={() => setCollapsed(true)}
         >
-          <span>⇤</span>
+          <span>⇥</span>
         </button>
+        <span className="sidebar-title">
+          {activePanel === 'chats' ? 'Conversations' : activePanel}
+        </span>
       </div>
 
       {/* TypingMind Gold Pill: + New Chat */}
