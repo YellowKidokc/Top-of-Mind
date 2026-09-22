@@ -41,6 +41,16 @@ button {
   background: transparent;
 }
 
+/* Utility: spinning icon (re-vectorize, loading states) */
+@keyframes tom-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: tom-spin 0.9s linear infinite;
+}
+
 /* App Shell */
 .app {
   height: 100vh;
@@ -141,12 +151,12 @@ button {
   border-color: var(--tom-gold-dim);
 }
 
-/* Workspace Sidebar (Middle) */
+/* Workspace Sidebar (Right side, collapsible) */
 .workspace-sidebar {
   width: 260px;
   min-width: 260px;
   background: #0d0d0d;
-  border-right: 1px solid var(--tom-border);
+  border-left: 1px solid var(--tom-border);
   display: flex;
   flex-direction: column;
   padding: 12px;
