@@ -1,0 +1,29 @@
+---
+fis_schema: "folder-index.v1"
+folder_id: "FLD-20260907-cdc5af6a"
+folder: "GitHub\Top-of-Mind\docs\ui-references"
+folder_class: "media"
+confidence: 0.923
+dependency_risk: 0.0
+dominant_family: "media"
+dominant_ratio: 0.923
+file_count: 13
+classified_at: "2026-09-07T16:09:34"
+allowed_actions: ["rename", "sort_date", "sort_type", "dedupe", "archive"]
+suggested_name: "media_ui-references"
+---
+
+# FIS Folder Index: ui-references
+
+**Class**: media  ·  **Confidence**: 92%  ·  **Files**: 13  ·  **Dominant**: media (92%)
+
+## Allowed actions
+- rename
+- sort_date
+- sort_type
+- dedupe
+- archive
+
+**Suggested name**: `media_ui-references`  (not applied — review before use)
+
+<!-- FIS folder-index.v1: parseable note; safe to regenerate. -->
