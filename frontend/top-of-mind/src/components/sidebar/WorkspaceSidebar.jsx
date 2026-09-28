@@ -84,6 +84,8 @@ function FolderNode({ node, depth = 0, query, selectedFolder, setSelectedFolder,
 export function WorkspaceSidebar({
   collapsed,
   setCollapsed,
+  wide,
+  setWide,
   activePanel,
   query,
   setQuery,
@@ -109,18 +111,29 @@ export function WorkspaceSidebar({
   }
 
   return (
-    <aside className="workspace-sidebar">
+    <aside className={`workspace-sidebar ${wide ? 'wide' : ''}`}>
       <div className="sidebar-header">
         <span className="sidebar-title">
           {activePanel === 'chats' ? 'Conversations' : activePanel}
         </span>
-        <button
-          className="sidebar-toggle-btn"
-          title="Collapse Sidebar"
-          onClick={() => setCollapsed(true)}
-        >
-          <span>⇤</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          {setWide && (
+            <button
+              className="sidebar-toggle-btn"
+              title={wide ? 'Shrink sidebar back to normal width' : 'Open sidebar further (wide)'}
+              onClick={() => setWide(!wide)}
+            >
+              <span>⇹</span>
+            </button>
+          )}
+          <button
+            className="sidebar-toggle-btn"
+            title="Shut sidebar all the way to the slim bar"
+            onClick={() => setCollapsed(true)}
+          >
+            <span>⇤</span>
+          </button>
+        </div>
       </div>
 
       {/* TypingMind Gold Pill: + New Chat */}

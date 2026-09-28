@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Columns3, Grid2X2, MessageSquare, Send, Paperclip, Mic, Sparkles, SlidersHorizontal, RefreshCw, XCircle, Bot, Layers, ArrowRightLeft, FolderGit2 } from 'lucide-react';
+import { Columns3, Send, Paperclip, Sparkles, XCircle } from 'lucide-react';
 import { IconRail } from './components/sidebar/IconRail';
 import { WorkspaceSidebar } from './components/sidebar/WorkspaceSidebar';
+import { RightRail } from './components/rightdock/RightRail';
+import { RightDockPanel } from './components/rightdock/RightDockPanel';
 import { KnowledgePanel } from './components/knowledge/KnowledgePanel';
 import { PromptsPanel } from './components/prompts/PromptsPanel';
 import { SettingsPanel } from './components/settings/SettingsPanel';
@@ -35,6 +37,17 @@ function App() {
   const [query, setQuery] = useState('');
   const [activePanel, setActivePanel] = useState('chats');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarWide, setSidebarWide] = useState(false);
+
+  // Symmetric right dock: slim rail always visible, panel 3-state
+  // 'open' | 'wide' | 'collapsed'
+  const [rightPanelState, setRightPanelState] = useState('open');
+  const [rightTab, setRightTab] = useState('convergence');
+  const [quickSettings, setQuickSettings] = useState({
+    autoCombine: false,
+    compactCards: false,
+    confirmEndAll: true
+  });
   const [selectedFolder, setSelectedFolder] = useState('inbox');
   const [activeChat, setActiveChat] = useState('Morning triage');
   const [online, setOnline] = useState(false);
@@ -132,6 +145,11 @@ function App() {
         }, (idx + 1) * 350);
       });
     }
+
+    // Quick Setting: auto-combine after a multi-lane broadcast
+    if (quickSettings.autoCombine && targetSources.length > 1) {
+      handleCombine();
+    }
   }
 
   function handleNewChat() {
@@ -139,12 +157,56 @@ function App() {
     setStatus('Started fresh conversation.');
   }
 
+  // Left rail: clicking an icon opens its panel; clicking the active
+  // icon again shuts the panel all the way back to the slim bar.
+  function handleRailSelect(key) {
+    if (key === activePanel) {
+      setSidebarCollapsed((c) => !c);
+    } else {
+      setActivePanel(key);
+      setSidebarCollapsed(false);
+    }
+  }
+
+  // Right rail mirrors the left: icon opens the dock, active icon shuts it.
+  function handleRightRailSelect(tab) {
+    if (tab === rightTab && rightPanelState !== 'collapsed') {
+      setRightPanelState('collapsed');
+    } else {
+      setRightTab(tab);
+      if (rightPanelState === 'collapsed') setRightPanelState('open');
+    }
+  }
+
+  function handleCombine() {
+    topOfMindApi.combine({ folder: selectedFolder, chat: activeChat });
+    const combined = {
+      id: `synth-${Date.now()}`,
+      role: 'assistant',
+      source: 'Synthesis Engine',
+      content: `[SYNTHESIS CONVERGENCE] Merged context across all active lanes for "${activeChat}". Consensus aligned.`,
+      created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setMessages((prev) => [...prev, combined]);
+  }
+
+  function handleJoin() {
+    const joined = {
+      id: `join-${Date.now()}`,
+      role: 'assistant',
+      source: 'Lane Bridge',
+      content: `Linked lane 1 and lane 2 into shared context memory.`,
+      created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setMessages((prev) => [...prev, joined]);
+  }
+
   return (
     <div className="app">
       {/* 1. Left Icon Rail */}
       <IconRail
         activePanel={activePanel}
-        setActivePanel={setActivePanel}
+        setActivePanel={handleRailSelect}
         sources={sources}
       />
 
@@ -152,6 +214,8 @@ function App() {
       <WorkspaceSidebar
         collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
+        wide={sidebarWide}
+        setWide={setSidebarWide}
         activePanel={activePanel}
         query={query}
         setQuery={setQuery}
@@ -223,7 +287,7 @@ function App() {
         {activePanel === 'agents' && <AgentsPanel />}
 
         {activePanel === 'chats' && (
-          <div className="stream-container">
+          <div className={`stream-container ${quickSettings.compactCards ? 'compact-cards' : ''}`}>
             {/* Split Screen 3-way or 4-way vertical layout */}
             {(splitMode === 'split-3' || splitMode === 'split-4') && (
               <div className="split-columns">
@@ -329,78 +393,6 @@ function App() {
               </div>
             )}
 
-            {/* 4. Right-Hand Conversation Convergence & Model Folders Dock */}
-            <aside className="conversation-right-dock">
-              <div className="dock-header">
-                <div className="dock-title">Chat Convergence & Routing</div>
-                <div className="dock-convergence-actions">
-                  <button
-                    className="dock-action-btn"
-                    onClick={() => {
-                      // Combine active lane messages into synthesis
-                      topOfMindApi.combine({ folder: selectedFolder, chat: activeChat });
-                      const combined = {
-                        id: `synth-${Date.now()}`,
-                        role: 'assistant',
-                        source: 'Synthesis Engine',
-                        content: `[SYNTHESIS CONVERGENCE] Merged context across all active lanes for "${activeChat}". Consensus aligned.`,
-                        created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      };
-                      setMessages((prev) => [...prev, combined]);
-                    }}
-                  >
-                    <span>Combine All Chats</span>
-                    <Layers size={13} style={{ color: 'var(--tom-gold)' }} />
-                  </button>
-
-                  <button
-                    className="dock-action-btn"
-                    onClick={() => {
-                      const joined = {
-                        id: `join-${Date.now()}`,
-                        role: 'assistant',
-                        source: 'Lane Bridge',
-                        content: `Linked lane 1 and lane 2 into shared context memory.`,
-                        created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      };
-                      setMessages((prev) => [...prev, joined]);
-                    }}
-                  >
-                    <span>Join Selected Chats</span>
-                    <ArrowRightLeft size={13} style={{ color: 'var(--tom-green)' }} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="dock-model-folders">
-                <div className="sidebar-section-title" style={{ padding: '4px 6px', margin: '4px 0' }}>
-                  <span>Dedicated Model Folders</span>
-                  <span>{sources.length}</span>
-                </div>
-                {sources.map((src) => {
-                  const isActiveInLane = Object.values(columnModels).includes(src.id);
-                  return (
-                    <button
-                      key={src.id}
-                      className={`dock-folder-item ${isActiveInLane ? 'active' : ''}`}
-                      onClick={() => {
-                        // Switch active lane 0 to this model and set folder
-                        setColumnModels((prev) => ({ ...prev, col0: src.id }));
-                        setSelectedFolder(src.id);
-                      }}
-                    >
-                      <Bot size={13} style={{ color: isActiveInLane ? 'var(--tom-gold)' : 'inherit' }} />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {src.name}
-                      </span>
-                      <span className="dock-badge">
-                        {isActiveInLane ? 'Active' : 'Standby'}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </aside>
           </div>
         )}
 
@@ -427,7 +419,7 @@ function App() {
               <button
                 className="action-pill-btn danger"
                 onClick={() => {
-                  if (confirm('End all conversations?')) {
+                  if (!quickSettings.confirmEndAll || confirm('End all conversations?')) {
                     topOfMindApi.endAll();
                     setMessages([]);
                   }
@@ -475,6 +467,38 @@ function App() {
           </div>
         </footer>
       </main>
+
+      {/* 5. Right Dock Panel (mirrors left sidebar: open / wide / shut to rail) */}
+      {rightPanelState !== 'collapsed' && (
+        <RightDockPanel
+          tab={rightTab}
+          setTab={setRightTab}
+          state={rightPanelState}
+          setState={setRightPanelState}
+          sources={sources}
+          columnModels={columnModels}
+          setColumnModels={setColumnModels}
+          splitMode={splitMode}
+          setSplitMode={setSplitMode}
+          selectedFolder={selectedFolder}
+          activeChat={activeChat}
+          onCombine={handleCombine}
+          onJoin={handleJoin}
+          quickSettings={quickSettings}
+          setQuickSettings={setQuickSettings}
+          onOpenFullSettings={() => {
+            setActivePanel('settings');
+            setSidebarCollapsed(false);
+          }}
+        />
+      )}
+
+      {/* 6. Right Icon Rail (slim bar, always visible) */}
+      <RightRail
+        activeTab={rightTab}
+        panelOpen={rightPanelState !== 'collapsed'}
+        onSelect={handleRightRailSelect}
+      />
     </div>
   );
 }
