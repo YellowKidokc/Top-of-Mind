@@ -1,0 +1,69 @@
+# Top of Mind Hub — lane definitions
+#
+# type: openai_compat | anthropic | gemini | echo | ahk
+# api_key_env: name of the variable in hub/.env holding the key
+# default: true  → this lane answers when no sources are specified
+# synthesizer: true → this lane writes the Combine summary
+#
+# Lanes with no key in .env show 'offline' in the UI but break nothing.
+# Add/remove lanes freely — the hub reads this file fresh on every send.
+
+lanes:
+  - id: claude
+    name: Claude Sonnet
+    type: anthropic
+    model: claude-sonnet-4-5
+    api_key_env: ANTHROPIC_API_KEY
+    synthesizer: true
+    default: true
+
+  - id: gpt
+    name: GPT (OpenAI)
+    type: openai_compat
+    base_url: https://api.openai.com/v1
+    model: gpt-4o
+    api_key_env: OPENAI_API_KEY
+    default: true
+
+  - id: deepseek
+    name: DeepSeek
+    type: openai_compat
+    base_url: https://api.deepseek.com/v1
+    model: deepseek-chat
+    api_key_env: DEEPSEEK_API_KEY
+    default: true
+
+  - id: kimi
+    name: Kimi (Moonshot)
+    type: openai_compat
+    base_url: https://api.moonshot.ai/v1
+    model: kimi-k2
+    api_key_env: MOONSHOT_API_KEY
+    default: true
+
+  - id: gemini
+    name: Gemini
+    type: gemini
+    model: gemini-2.5-flash
+    api_key_env: GEMINI_API_KEY
+
+  - id: ollama
+    name: Local Ollama
+    type: openai_compat
+    base_url: http://127.0.0.1:11434/v1
+    model: llama3.1
+    api_key_env: OLLAMA_API_KEY   # not required by Ollama — any value or leave lane offline-safe
+    enabled: true
+
+  # Offline test lane — always answers, no key, proves the plumbing works
+  - id: echo
+    name: Echo (test lane)
+    type: echo
+
+  # Desktop holdout — only for AIs with no API. The AHK worker on the
+  # server machine polls /bridge/jobs for these.
+  - id: ahk
+    name: AutoHotkey Bridge
+    type: ahk
+    worker: ahk-main
+    enabled: false
