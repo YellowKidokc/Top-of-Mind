@@ -88,7 +88,7 @@ export function ModelsPanel() {
                   <div className="model-card-meta">{m.context} tokens · {m.provider}</div>
                 </div>
                 <div
-                  className={model-toggle-pill }
+                  className={`model-toggle-pill ${m.enabled ? 'enabled' : ''}`}
                   onClick={(e) => toggleModel(m.id, e)}
                   title="Toggle active model lane"
                 >

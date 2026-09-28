@@ -99,7 +99,7 @@ export function KnowledgePanel() {
           {filtered.map((kb) => (
             <div
               key={kb.id}
-              className={model-list-card }
+              className={`model-list-card ${selectedKb && selectedKb.id === kb.id ? 'selected' : ''}`}
               onClick={() => setSelectedKb(kb)}
             >
               <div className="model-card-info">
