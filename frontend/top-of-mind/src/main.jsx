@@ -126,8 +126,22 @@ function App() {
       await topOfMindApi.createMessage({
         body: text,
         folder: selectedFolder,
-        sources: targetSources
+        sources: targetSources,
+        client_id: userMsg.id
       });
+
+      // Hub is live: lanes answer asynchronously — poll for their replies
+      let polls = 0;
+      const poller = setInterval(async () => {
+        polls += 1;
+        try {
+          const d = await topOfMindApi.getMessages();
+          setMessages(Array.isArray(d) ? d : d.messages || []);
+        } catch {
+          clearInterval(poller);
+        }
+        if (polls >= 45) clearInterval(poller); // ~90s of listening
+      }, 2000);
     } catch {
       // Local simulated response for preview
       targetSources.forEach((src, idx) => {
