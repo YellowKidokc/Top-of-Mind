@@ -1,0 +1,206 @@
+import { Bot, Layers, ArrowRightLeft } from 'lucide-react';
+
+const TAB_LABELS = {
+  convergence: 'Convergence',
+  lanes: 'Lane Controls',
+  settings: 'Quick Settings'
+};
+
+const SPLIT_LABELS = {
+  single: 'Single',
+  'split-3': 'Split 3',
+  'split-4': 'Split 4',
+  'top-grid': 'Top Grid'
+};
+
+function laneCountFor(splitMode) {
+  if (splitMode === 'split-3') return 3;
+  if (splitMode === 'split-4' || splitMode === 'top-grid') return 4;
+  return 1;
+}
+
+export function RightDockPanel({
+  tab,
+  setTab,
+  state,
+  setState,
+  sources = [],
+  columnModels,
+  setColumnModels,
+  splitMode,
+  setSplitMode,
+  selectedFolder,
+  activeChat,
+  onCombine,
+  onJoin,
+  quickSettings,
+  setQuickSettings,
+  onOpenFullSettings
+}) {
+  const laneCount = laneCountFor(splitMode);
+
+  const toggleQuick = (key) =>
+    setQuickSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  return (
+    <aside className={`right-dock-panel ${state === 'wide' ? 'wide' : ''}`}>
+      <div className="dock-panel-header">
+        <span className="dock-panel-title">{TAB_LABELS[tab] || 'Dock'}</span>
+        <div className="dock-header-btns">
+          <button
+            className="sidebar-toggle-btn"
+            title={state === 'wide' ? 'Shrink dock back to normal width' : 'Open dock further (wide)'}
+            onClick={() => setState(state === 'wide' ? 'open' : 'wide')}
+          >
+            <span>⇹</span>
+          </button>
+          <button
+            className="sidebar-toggle-btn"
+            title="Shut dock all the way to the slim bar"
+            onClick={() => setState('collapsed')}
+          >
+            <span>⇥</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="dock-tabs">
+        {Object.entries(TAB_LABELS).map(([key, label]) => (
+          <button
+            key={key}
+            className={`dock-tab ${tab === key ? 'active' : ''}`}
+            onClick={() => setTab(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="dock-panel-body">
+        {tab === 'convergence' && (
+          <>
+            <div className="dock-section-label">Chat Convergence & Routing</div>
+            <div className="dock-convergence-actions">
+              <button className="dock-action-btn" onClick={onCombine}>
+                <span>Combine All Chats</span>
+                <Layers size={13} style={{ color: 'var(--tom-gold)' }} />
+              </button>
+              <button className="dock-action-btn" onClick={onJoin}>
+                <span>Join Selected Chats</span>
+                <ArrowRightLeft size={13} style={{ color: 'var(--tom-green)' }} />
+              </button>
+            </div>
+
+            <div className="sidebar-section-title" style={{ padding: '4px 6px', margin: '8px 0 4px' }}>
+              <span>Dedicated Model Folders</span>
+              <span>{sources.length}</span>
+            </div>
+            {sources.map((src) => {
+              const isActiveInLane = Object.values(columnModels).includes(src.id);
+              return (
+                <button
+                  key={src.id}
+                  className={`dock-folder-item ${isActiveInLane ? 'active' : ''}`}
+                  onClick={() => setColumnModels((prev) => ({ ...prev, col0: src.id }))}
+                >
+                  <Bot size={13} style={{ color: isActiveInLane ? 'var(--tom-gold)' : 'inherit' }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {src.name}
+                  </span>
+                  <span className="dock-badge">{isActiveInLane ? 'Active' : 'Standby'}</span>
+                </button>
+              );
+            })}
+          </>
+        )}
+
+        {tab === 'lanes' && (
+          <>
+            <div className="dock-section-label">Split Layout</div>
+            <div className="split-controls" style={{ alignSelf: 'flex-start' }}>
+              {Object.entries(SPLIT_LABELS).map(([key, label]) => (
+                <button
+                  key={key}
+                  className={`split-btn ${splitMode === key ? 'active' : ''}`}
+                  onClick={() => setSplitMode(key)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="dock-section-label">Lane Assignments</div>
+            {Array.from({ length: laneCount }, (_, i) => {
+              const colKey = `col${i}`;
+              return (
+                <div className="qs-row" key={colKey}>
+                  <span>Lane {i + 1}</span>
+                  <select
+                    className="column-model-select"
+                    value={columnModels[colKey]}
+                    onChange={(e) =>
+                      setColumnModels((prev) => ({ ...prev, [colKey]: e.target.value }))
+                    }
+                  >
+                    {sources.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })}
+
+            <p className="dock-hint">
+              Folder: <b>{selectedFolder}</b> · Chat: <b>{activeChat}</b>
+            </p>
+          </>
+        )}
+
+        {tab === 'settings' && (
+          <>
+            <div className="dock-section-label">Quick Settings</div>
+
+            <div className="qs-row">
+              <span>Auto-combine after broadcast</span>
+              <button
+                className={`model-toggle-pill ${quickSettings.autoCombine ? 'enabled' : ''}`}
+                title="Automatically run Combine after every multi-lane send"
+                onClick={() => toggleQuick('autoCombine')}
+              >
+                <span className="toggle-handle" />
+              </button>
+            </div>
+
+            <div className="qs-row">
+              <span>Compact message cards</span>
+              <button
+                className={`model-toggle-pill ${quickSettings.compactCards ? 'enabled' : ''}`}
+                title="Tighter padding on message cards"
+                onClick={() => toggleQuick('compactCards')}
+              >
+                <span className="toggle-handle" />
+              </button>
+            </div>
+
+            <div className="qs-row">
+              <span>Confirm before End All</span>
+              <button
+                className={`model-toggle-pill ${quickSettings.confirmEndAll ? 'enabled' : ''}`}
+                title="Ask before ending all conversations"
+                onClick={() => toggleQuick('confirmEndAll')}
+              >
+                <span className="toggle-handle" />
+              </button>
+            </div>
+
+            <button className="new-chat" style={{ marginTop: '8px' }} onClick={onOpenFullSettings}>
+              <span>Open Full Settings</span>
+            </button>
+          </>
+        )}
+      </div>
+    </aside>
+  );
+}
