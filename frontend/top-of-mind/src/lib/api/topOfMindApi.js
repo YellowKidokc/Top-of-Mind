@@ -1,4 +1,8 @@
-const API_BASE = import.meta.env.VITE_TOP_OF_MIND_API || 'http://127.0.0.1:8000';
+// Served by the hub itself (the start script) -> same origin. Running the
+// Vite dev server instead -> the hub on port 8000. VITE_TOP_OF_MIND_API wins.
+const API_BASE =
+  import.meta.env.VITE_TOP_OF_MIND_API ||
+  (window.location.port === '8000' ? window.location.origin : 'http://127.0.0.1:8000');
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {

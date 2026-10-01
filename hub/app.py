@@ -28,6 +28,7 @@ import yaml
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import adapters, db
@@ -531,7 +532,16 @@ def job_stats():
     }
 
 
+# ------------------------------ the app itself ------------------------------
+# When the frontend has been built, the hub serves it too: one program, one
+# address (http://localhost:8000). Mounted last so every API route wins.
+
+FRONTEND_DIST = HUB_DIR.parent / "frontend" / "top-of-mind" / "dist"
+if (FRONTEND_DIST / "index.html").exists():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
+
+
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
