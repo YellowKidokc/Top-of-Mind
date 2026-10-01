@@ -269,8 +269,9 @@ def combine_messages(payload: Dict[str, Any]):
     if synth:
         ok, reply = adapters.send(synth, [], prompt)
         content = reply if ok else f"[synthesis lane offline: {reply}]\n\n{joined}"
+        model = synth["id"] if ok else "Synthesis Engine"
     else:
-        content = joined
+        content, model = joined, "Synthesis Engine"
 
     summary = {
         "id": f"synth_{uuid.uuid4().hex[:8]}",
@@ -281,8 +282,9 @@ def combine_messages(payload: Dict[str, Any]):
     }
     db.add_message(
         msg_id=summary["id"], role="assistant", source="Synthesis Engine",
-        content=content, folder=folder, created_at=summary["created_at"],
+        content=content, folder=folder, created_at=summary["created_at"], model=model,
     )
+    summary["model"] = model
     return summary
 
 

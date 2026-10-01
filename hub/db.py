@@ -33,7 +33,8 @@ def init_db():
               client_id TEXT,
               created_at TEXT,
               ts REAL,
-              error INTEGER DEFAULT 0
+              error INTEGER DEFAULT 0,
+              model TEXT
             );
             CREATE UNIQUE INDEX IF NOT EXISTS idx_messages_client
               ON messages(client_id) WHERE client_id IS NOT NULL;
@@ -63,21 +64,41 @@ def init_db():
               USING fts5(chunk, content='knowledge', content_rowid='id');
             """
         )
-        # Databases created before the error column existed
+        # Databases created before these columns existed
         cols = [r[1] for r in c.execute("PRAGMA table_info(messages)")]
         if "error" not in cols:
             c.execute("ALTER TABLE messages ADD COLUMN error INTEGER DEFAULT 0")
+        if "model" not in cols:
+            c.execute("ALTER TABLE messages ADD COLUMN model TEXT")
+            c.execute("UPDATE messages SET model = source WHERE role = 'assistant'")
+        # Provenance is write-once: whichever model wrote a message and the
+        # folder it arrived in can never be changed afterwards.
+        c.executescript(
+            """
+            CREATE TRIGGER IF NOT EXISTS messages_provenance_locked
+            BEFORE UPDATE OF model, folder, source, role ON messages
+            BEGIN
+              SELECT RAISE(ABORT, 'message provenance (model/folder) is permanent');
+            END;
+            """
+        )
 
 
 # ------------------------------ messages ------------------------------
 
-def add_message(msg_id, role, source, content, folder="inbox", client_id=None, created_at="", error=False):
-    """Returns False when a message with this client_id already exists."""
+def add_message(msg_id, role, source, content, folder="inbox", client_id=None, created_at="", error=False, model=None):
+    """Returns False when a message with this client_id already exists.
+
+    model is the lane that actually generated the text; it defaults to source
+    for assistant messages so every AI-written message is stamped.
+    """
+    if role == "assistant" and not model:
+        model = source
     with _lock, _conn() as c:
         cur = c.execute(
-            "INSERT OR IGNORE INTO messages (id, role, source, content, folder, client_id, created_at, ts, error)"
-            " VALUES (?,?,?,?,?,?,?,?,?)",
-            (msg_id, role, source, content, folder, client_id, created_at, time.time(), int(error)),
+            "INSERT OR IGNORE INTO messages (id, role, source, content, folder, client_id, created_at, ts, error, model)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (msg_id, role, source, content, folder or "inbox", client_id, created_at, time.time(), int(error), model),
         )
         return cur.rowcount == 1
 
@@ -95,7 +116,7 @@ def get_message_by_client_id(client_id):
 def get_messages(limit=75):
     with _lock, _conn() as c:
         rows = c.execute(
-            "SELECT id, role, source, content, content AS body, folder, created_at, error"
+            "SELECT id, role, source, model, content, content AS body, folder, created_at, error"
             " FROM messages ORDER BY ts DESC LIMIT ?",
             (limit,),
         ).fetchall()
@@ -128,7 +149,8 @@ def get_context_for_lane(lane_id, exclude_id=None, limit=20):
 
 
 def update_message(msg_id, patch):
-    allowed = {"folder": "folder", "content": "content"}
+    # folder/model/source are provenance and never change — see the trigger in init_db
+    allowed = {"content": "content"}
     sets, vals = [], []
     for k, col in allowed.items():
         if k in patch:
