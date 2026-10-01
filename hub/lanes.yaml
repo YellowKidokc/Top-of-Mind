@@ -12,7 +12,7 @@ lanes:
   - id: claude
     name: Claude Sonnet
     type: anthropic
-    model: claude-sonnet-4-5
+    model: claude-sonnet-5-5
     api_key_env: ANTHROPIC_API_KEY
     synthesizer: true
     default: true

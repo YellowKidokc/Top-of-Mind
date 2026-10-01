@@ -200,16 +200,23 @@ function App() {
     }
   }
 
-  function handleCombine() {
-    topOfMindApi.combine({ folder: selectedFolder, chat: activeChat });
-    const combined = {
-      id: `synth-${Date.now()}`,
-      role: 'assistant',
-      source: 'Synthesis Engine',
-      content: `[SYNTHESIS CONVERGENCE] Merged context across all active lanes for "${activeChat}". Consensus aligned.`,
-      created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    setMessages((prev) => [...prev, combined]);
+  async function handleCombine() {
+    const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    try {
+      const summary = await topOfMindApi.combine({ folder: selectedFolder, chat: activeChat });
+      setMessages((prev) => [...prev, { ...summary, folder: selectedFolder }]);
+    } catch (e) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `synth-${Date.now()}`,
+          role: 'assistant',
+          source: 'Synthesis Engine',
+          content: `Combine needs the hub — it isn't reachable (${e.message}).`,
+          created_at: stamp
+        }
+      ]);
+    }
   }
 
   function handleJoin() {
@@ -317,7 +324,12 @@ function App() {
                   const colKey = `col${colIndex}`;
                   const currentModel = columnModels[colKey];
                   const colMessages = filteredMessages.filter(
-                    (m) => m.role === 'user' || m.source === currentModel || !m.source
+                    (m) =>
+                      m.role === 'user' ||
+                      m.source === currentModel ||
+                      !m.source ||
+                      // Synthesis belongs to no single lane — show it once, in the first column
+                      (colIndex === 0 && m.source === 'Synthesis Engine')
                   );
 
                   return (
@@ -424,7 +436,7 @@ function App() {
             <div className="composer-left-actions">
               <button
                 className="action-pill-btn"
-                onClick={() => topOfMindApi.combine({ folder: selectedFolder })}
+                onClick={handleCombine}
                 title="Combine active streams into synthesis"
               >
                 <Sparkles size={12} />
@@ -442,7 +454,7 @@ function App() {
                 className="action-pill-btn danger"
                 onClick={() => {
                   if (!quickSettings.confirmEndAll || confirm('End all conversations?')) {
-                    topOfMindApi.endAll();
+                    topOfMindApi.endAll().catch(() => { /* hub offline: nothing queued to clear */ });
                     setMessages([]);
                   }
                 }}

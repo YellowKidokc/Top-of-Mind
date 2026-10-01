@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -103,10 +103,13 @@ class BridgeHeartbeat(BaseModel):
 
 # ------------------------------ lane fan-out ------------------------------
 
-def _run_lane(lane: Dict[str, Any], folder: str, text: str):
+def _run_lane(lane: Dict[str, Any], folder: str, text: str, user_msg_id: str):
     """Background worker: call one AI, store its reply."""
-    context = db.get_context_for_lane(lane["id"])
-    ok, reply = adapters.send(lane, context, text)
+    try:
+        context = db.get_context_for_lane(lane["id"], exclude_id=user_msg_id)
+        ok, reply = adapters.send(lane, context, text)
+    except Exception as e:  # never let a lane die silently in the thread pool
+        ok, reply = False, f"{type(e).__name__}: {e}"
     LANE_STATUS[lane["id"]] = "online" if ok else "degraded"
     db.add_message(
         msg_id=f"ai_{uuid.uuid4().hex[:10]}",
@@ -115,10 +118,11 @@ def _run_lane(lane: Dict[str, Any], folder: str, text: str):
         content=reply,
         folder=folder,
         created_at=time.strftime("%I:%M %p"),
+        error=not ok,
     )
 
 
-def _fan_out(source_ids: List[str], folder: str, text: str):
+def _fan_out(source_ids: List[str], folder: str, text: str, user_msg_id: str):
     lanes = {l["id"]: l for l in load_lanes()}
     for src in source_ids:
         lane = lanes.get(src)
@@ -130,14 +134,15 @@ def _fan_out(source_ids: List[str], folder: str, text: str):
                 content=f"[unknown lane '{src}' — add it to hub/lanes.yaml]",
                 folder=folder,
                 created_at=time.strftime("%I:%M %p"),
+                error=True,
             )
             continue
         if lane.get("type") == "ahk":
             # Desktop holdout: hand to the bridge worker synchronously so the
             # job id comes back in the reply text.
-            _run_lane(lane, folder, text)
+            _run_lane(lane, folder, text, user_msg_id)
         else:
-            executor.submit(_run_lane, lane, folder, text)
+            executor.submit(_run_lane, lane, folder, text, user_msg_id)
 
 
 # ------------------------------ core contract ------------------------------
@@ -174,6 +179,10 @@ def get_sources():
 @app.post("/top-of-mind/sources")
 def create_source(source: Dict[str, Any]):
     # Runtime-added lane — written back to lanes.yaml so it survives restarts
+    if not str(source.get("id", "")).strip():
+        raise HTTPException(status_code=400, detail="source needs an id")
+    if any(l.get("id") == source["id"] for l in load_lanes()):
+        raise HTTPException(status_code=409, detail=f"lane '{source['id']}' already exists")
     lane = {
         "id": source["id"],
         "name": source.get("name", source["id"]),
@@ -207,7 +216,8 @@ def create_message(msg: MessageCreate):
         "source": "User" if msg.role == "user" else ((msg.sources or ["AI"])[0]),
     }
     # Idempotent: a double-fired Enter with the same client_id stores once
-    db.add_message(
+    # and fans out once — the retry gets the original message back.
+    inserted = db.add_message(
         msg_id=msg_id,
         role=msg.role,
         source=new_msg["source"],
@@ -216,10 +226,12 @@ def create_message(msg: MessageCreate):
         client_id=msg.client_id,
         created_at=new_msg["created_at"],
     )
+    if not inserted:
+        return db.get_message_by_client_id(msg.client_id) or new_msg
 
     if msg.role == "user":
         targets = msg.sources or [l["id"] for l in load_lanes() if l.get("default")]
-        _fan_out(targets, msg.folder, msg.body)
+        _fan_out(targets, msg.folder, msg.body, msg_id)
 
     return new_msg
 
@@ -233,18 +245,18 @@ def patch_message(msg_id: str, patch: Dict[str, Any]):
 @app.post("/top-of-mind/combine")
 def combine_messages(payload: Dict[str, Any]):
     folder = payload.get("folder", "inbox")
-    recent = [m for m in db.get_messages(50) if m["role"] == "assistant"
+    recent = [m for m in db.get_messages(50) if m["role"] == "assistant" and not m["error"]
+              and m["folder"] == folder
               and m["source"] not in ("Synthesis Engine", "Synthesis Hub")][-12:]
 
     if not recent:
-        summary = {
+        return {
             "id": f"synth_{uuid.uuid4().hex[:8]}",
             "role": "assistant",
             "source": "Synthesis Engine",
             "content": "Nothing to combine yet — send a broadcast first.",
             "created_at": time.strftime("%I:%M %p"),
         }
-        return summary
 
     joined = "\n\n".join(f"--- {m['source']} ---\n{m['content']}" for m in recent)
     prompt = (
@@ -370,7 +382,7 @@ def job_stats():
     return {
         "status": "online",
         "queue_depth": pending,
-        "total_messages": len(db.get_messages(100000)),
+        "total_messages": db.count_messages(),
         "total_jobs": len(adapters.JOB_QUEUE),
     }
 

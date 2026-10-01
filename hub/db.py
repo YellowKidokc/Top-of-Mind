@@ -32,7 +32,8 @@ def init_db():
               folder TEXT DEFAULT 'inbox',
               client_id TEXT,
               created_at TEXT,
-              ts REAL
+              ts REAL,
+              error INTEGER DEFAULT 0
             );
             CREATE UNIQUE INDEX IF NOT EXISTS idx_messages_client
               ON messages(client_id) WHERE client_id IS NOT NULL;
@@ -62,40 +63,67 @@ def init_db():
               USING fts5(chunk, content='knowledge', content_rowid='id');
             """
         )
+        # Databases created before the error column existed
+        cols = [r[1] for r in c.execute("PRAGMA table_info(messages)")]
+        if "error" not in cols:
+            c.execute("ALTER TABLE messages ADD COLUMN error INTEGER DEFAULT 0")
 
 
 # ------------------------------ messages ------------------------------
 
-def add_message(msg_id, role, source, content, folder="inbox", client_id=None, created_at=""):
+def add_message(msg_id, role, source, content, folder="inbox", client_id=None, created_at="", error=False):
+    """Returns False when a message with this client_id already exists."""
     with _lock, _conn() as c:
-        c.execute(
-            "INSERT OR IGNORE INTO messages (id, role, source, content, folder, client_id, created_at, ts)"
-            " VALUES (?,?,?,?,?,?,?,?)",
-            (msg_id, role, source, content, folder, client_id, created_at, time.time()),
+        cur = c.execute(
+            "INSERT OR IGNORE INTO messages (id, role, source, content, folder, client_id, created_at, ts, error)"
+            " VALUES (?,?,?,?,?,?,?,?,?)",
+            (msg_id, role, source, content, folder, client_id, created_at, time.time(), int(error)),
         )
+        return cur.rowcount == 1
+
+
+def get_message_by_client_id(client_id):
+    with _lock, _conn() as c:
+        row = c.execute(
+            "SELECT id, role, source, content, content AS body, folder, client_id, created_at"
+            " FROM messages WHERE client_id = ?",
+            (client_id,),
+        ).fetchone()
+    return dict(row) if row else None
 
 
 def get_messages(limit=75):
     with _lock, _conn() as c:
         rows = c.execute(
-            "SELECT id, role, source, content, content AS body, folder, created_at"
+            "SELECT id, role, source, content, content AS body, folder, created_at, error"
             " FROM messages ORDER BY ts DESC LIMIT ?",
             (limit,),
         ).fetchall()
     return [dict(r) for r in reversed(rows)]
 
 
-def get_context_for_lane(lane_id, limit=20):
-    """User messages + this lane's own replies, oldest first — the lane's memory of the chat."""
+def get_context_for_lane(lane_id, exclude_id=None, limit=20):
+    """User messages + this lane's own successful replies, oldest first — the lane's memory of the chat.
+
+    Error replies are skipped so they never get fed back to the model, and
+    consecutive same-role turns are merged so strict providers accept the history.
+    """
     with _lock, _conn() as c:
         rows = c.execute(
-            "SELECT role, source, content FROM messages"
-            " WHERE role = 'user' OR source = ? ORDER BY ts DESC LIMIT ?",
-            (lane_id, limit),
+            "SELECT role, content FROM messages"
+            " WHERE (role = 'user' OR (source = ? AND error = 0)) AND id != ?"
+            " ORDER BY ts DESC LIMIT ?",
+            (lane_id, exclude_id or "", limit),
         ).fetchall()
     out = []
     for r in reversed(rows):
-        out.append({"role": "user" if r["role"] == "user" else "assistant", "content": r["content"]})
+        role = "user" if r["role"] == "user" else "assistant"
+        if out and out[-1]["role"] == role:
+            out[-1]["content"] += "\n\n" + r["content"]
+        else:
+            out.append({"role": role, "content": r["content"]})
+    while out and out[0]["role"] != "user":
+        out.pop(0)
     return out
 
 
@@ -111,6 +139,11 @@ def update_message(msg_id, patch):
     vals.append(msg_id)
     with _lock, _conn() as c:
         c.execute(f"UPDATE messages SET {', '.join(sets)} WHERE id = ?", vals)
+
+
+def count_messages():
+    with _lock, _conn() as c:
+        return c.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
 
 
 def clear_messages():
@@ -174,13 +207,15 @@ def add_knowledge(lane, path, chunk):
 
 def search_knowledge(lane, query, limit=10):
     with _lock, _conn() as c:
-        if query:
+        # Quote each word so punctuation (apostrophes, hyphens) can't break FTS5 syntax
+        terms = " ".join('"' + w.replace('"', '""') + '"' for w in query.split())
+        if terms:
             rows = c.execute(
                 "SELECT k.id, k.lane, k.path, k.chunk, k.ts FROM knowledge k"
                 " JOIN knowledge_fts f ON k.id = f.rowid"
                 " WHERE knowledge_fts MATCH ? AND (k.lane = ? OR k.lane = 'shared')"
                 " ORDER BY rank LIMIT ?",
-                (query, lane, limit),
+                (terms, lane, limit),
             ).fetchall()
         else:
             rows = c.execute(
