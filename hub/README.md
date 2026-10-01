@@ -61,9 +61,41 @@ Use lane id `shared` in the knowledge bank for chunks every lane can find.
 
 That's the whole migration. Your computer carries nothing but a browser tab.
 
-## Endpoints (the contract the frontend already speaks)
+## How messages move
 
-`GET /top-of-mind/sources` · `GET/POST /top-of-mind/messages` ·
-`PATCH /top-of-mind/messages/{id}` · `POST /top-of-mind/combine` ·
-`POST /top-of-mind/controls/end-all` · `GET /health` ·
-`GET /jobs/stats` · bridge endpoints for the AHK holdout worker.
+One rule underneath everything: **a message is written once, into one chat,
+and never moves.** The model that wrote it and the chat and folder it arrived
+in are locked by the database itself. Everything else is a pointer:
+
+- **Send** — your message goes into the open chat with the lanes in view.
+  That's a *round*; the UI shows `2/3 answered` until every lane is back.
+- **Reply** — each lane answers in the background into the same chat,
+  stamped with its model. Unread dots appear per model in the sidebar.
+- **Invite** — put any reply into another chat. It's a link, not a copy:
+  the reply still lives where it was born, and the other chat's models now
+  see it as context.
+- **Combine** — select replies (from any chats) or take the latest round.
+  You get a new Combine chat that links exactly those replies plus the
+  synthesizer lane's merged answer.
+- **Model folders** — "everything Claude ever wrote" is a query, so it can
+  never fall out of sync.
+
+## Endpoints
+
+| Endpoint | What it does |
+|---|---|
+| `GET/POST /folders` | list / create folders |
+| `GET/POST /chats` | list chats (with unread per lane and round status) / create one |
+| `PATCH /chats/{id}` | rename, change lanes |
+| `GET/POST /chats/{id}/messages` | read a chat (own + invited messages) / send into it |
+| `POST /chats/{id}/read` | clear unread dots |
+| `POST /chats/{id}/links` | invite messages into this chat |
+| `POST /combine` | `{message_ids}` or `{chat_id}` → new Combine chat |
+| `GET /models/{id}/messages` | a model's folder |
+
+Older contract, kept working: `GET /top-of-mind/sources` ·
+`GET/POST /top-of-mind/messages` (no `chat_id` → the folder's *General* chat;
+the AHK worker posts replies here with `role: assistant`, `chat_id`,
+`parent_id` from the job payload) · `POST /top-of-mind/combine` ·
+`POST /top-of-mind/controls/end-all` · `GET /health` · `GET /jobs/stats` ·
+bridge endpoints.

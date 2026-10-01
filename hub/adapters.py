@@ -38,12 +38,21 @@ def send(lane, context, text):
             "worker": lane.get("worker", "ahk-main"),
             "action": "send_to_active",
             "target": {"id": lane["id"], "name": lane.get("name", lane["id"])},
-            "payload": {"text": text},
+            # The worker posts its reply to POST /top-of-mind/messages with
+            # role='assistant', sources=[lane id] and these ids, so the reply
+            # lands in the right chat and answers the right round.
+            "payload": {"text": text, "chat_id": lane.get("_chat_id"), "parent_id": lane.get("_parent_id")},
             "status": "pending",
             "created_at": time.time(),
         }
         JOB_QUEUE.append(job)
         return True, f"[queued to desktop bridge — job {job['id']}]"
+
+    # History can end on a user turn the lane never answered (e.g. it was
+    # offline); fold it into this turn so roles keep alternating.
+    context = list(context)
+    if context and context[-1]["role"] == "user":
+        text = context.pop()["content"] + "\n\n" + text
 
     if not key:
         return False, f"offline — set {lane.get('api_key_env', 'API_KEY')} in hub/.env"
@@ -78,9 +87,7 @@ def _openai_compat(lane, key, context, text):
 
 
 def _anthropic(lane, key, context, text):
-    # Anthropic wants alternating user/assistant turns, no 'system' role inline
-    messages = [m for m in context if m["role"] in ("user", "assistant")]
-    messages.append({"role": "user", "content": text})
+    messages = context + [{"role": "user", "content": text}]
     resp = httpx.post(
         "https://api.anthropic.com/v1/messages",
         headers={
@@ -90,13 +97,19 @@ def _anthropic(lane, key, context, text):
         },
         json={
             "model": lane["model"],
-            "max_tokens": lane.get("max_tokens", 2048),
+            "max_tokens": lane.get("max_tokens", 16000),
             "messages": messages,
         },
         timeout=TIMEOUT,
     )
     resp.raise_for_status()
-    return True, resp.json()["content"][0]["text"]
+    data = resp.json()
+    if data.get("stop_reason") == "refusal":
+        return False, "refused by model"
+    # Current models think by default, so content can open with a thinking
+    # block — collect only the text blocks.
+    text = "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text")
+    return True, text
 
 
 def _gemini(lane, key, context, text):
