@@ -38,7 +38,10 @@ def send(lane, context, text):
             "worker": lane.get("worker", "ahk-main"),
             "action": "send_to_active",
             "target": {"id": lane["id"], "name": lane.get("name", lane["id"])},
-            "payload": {"text": text},
+            # The worker posts its reply to POST /top-of-mind/messages with
+            # role='assistant', sources=[lane id] and these ids, so the reply
+            # lands in the right chat and answers the right round.
+            "payload": {"text": text, "chat_id": lane.get("_chat_id"), "parent_id": lane.get("_parent_id")},
             "status": "pending",
             "created_at": time.time(),
         }

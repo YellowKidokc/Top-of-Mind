@@ -33,6 +33,7 @@ export function RightDockPanel({
   activeChat,
   onCombine,
   onJoin,
+  selectedCount = 0,
   quickSettings,
   setQuickSettings,
   onOpenFullSettings
@@ -82,11 +83,11 @@ export function RightDockPanel({
             <div className="dock-section-label">Chat Convergence & Routing</div>
             <div className="dock-convergence-actions">
               <button className="dock-action-btn" onClick={onCombine}>
-                <span>Combine All Chats</span>
+                <span>Combine latest round</span>
                 <Layers size={13} style={{ color: 'var(--tom-gold)' }} />
               </button>
               <button className="dock-action-btn" onClick={onJoin}>
-                <span>Join Selected Chats</span>
+                <span>Combine selected{selectedCount ? ` (${selectedCount})` : ''}</span>
                 <ArrowRightLeft size={13} style={{ color: 'var(--tom-green)' }} />
               </button>
             </div>
@@ -163,17 +164,6 @@ export function RightDockPanel({
             <div className="dock-section-label">Quick Settings</div>
 
             <div className="qs-row">
-              <span>Auto-combine after broadcast</span>
-              <button
-                className={`model-toggle-pill ${quickSettings.autoCombine ? 'enabled' : ''}`}
-                title="Automatically run Combine after every multi-lane send"
-                onClick={() => toggleQuick('autoCombine')}
-              >
-                <span className="toggle-handle" />
-              </button>
-            </div>
-
-            <div className="qs-row">
               <span>Compact message cards</span>
               <button
                 className={`model-toggle-pill ${quickSettings.compactCards ? 'enabled' : ''}`}
@@ -185,10 +175,10 @@ export function RightDockPanel({
             </div>
 
             <div className="qs-row">
-              <span>Confirm before End All</span>
+              <span>Confirm before Cancel jobs</span>
               <button
                 className={`model-toggle-pill ${quickSettings.confirmEndAll ? 'enabled' : ''}`}
-                title="Ask before ending all conversations"
+                title="Ask before cancelling queued desktop jobs"
                 onClick={() => toggleQuick('confirmEndAll')}
               >
                 <span className="toggle-handle" />
