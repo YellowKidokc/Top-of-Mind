@@ -46,9 +46,23 @@ if not exist "node_modules" (
 call npm run build || (popd & goto :fail)
 popd
 
-echo [4/4] Starting Top of Mind at http://localhost:8000  (close this window to stop)
-start "" cmd /c "timeout /t 3 /nobreak >nul & start http://localhost:8000"
-".venv\Scripts\python.exe" -m uvicorn hub.app:app --host 127.0.0.1 --port 8000
+rem Use port 8000, or the next free one if something else already has it
+set PORT=8000
+:findport
+netstat -ano | findstr /r /c:":%PORT% .*LISTENING" >nul
+if errorlevel 1 goto :portfree
+echo  Port %PORT% is already in use - trying the next one...
+set /a PORT+=1
+if %PORT% GTR 8020 goto :noport
+goto :findport
+:noport
+echo  No free port between 8000 and 8020.
+goto :fail
+:portfree
+
+echo [4/4] Starting Top of Mind at http://localhost:%PORT%  (close this window to stop)
+start "" cmd /c "timeout /t 3 /nobreak >nul & start http://localhost:%PORT%"
+".venv\Scripts\python.exe" -m uvicorn hub.app:app --host 127.0.0.1 --port %PORT%
 goto :eof
 
 :fail

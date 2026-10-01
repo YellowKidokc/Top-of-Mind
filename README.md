@@ -12,7 +12,8 @@ You need **Python 3.10+** and **Node.js (LTS)** installed.
 - **Mac / Linux:** run `./start-top-of-mind.sh`
 
 The first run installs everything (a minute or two); after that it starts in
-seconds. Your browser opens **http://localhost:8000**. Close the window
+seconds. Your browser opens **http://localhost:8000** (or 8001, 8002… if 8000 is
+already taken — the window says which). Close the window
 (or Ctrl+C) to stop.
 
 **API keys:** the first run creates `hub/.env` — open it and paste in the keys

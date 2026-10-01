@@ -18,6 +18,23 @@ fi
 echo "[3/4] Building the app..."
 ( cd frontend/top-of-mind && { [ -d node_modules ] || npm install --no-audit --no-fund; } && npm run build )
 
-echo "[4/4] Starting Top of Mind at http://localhost:8000  (Ctrl+C to stop)"
-( sleep 3; (command -v open >/dev/null && open http://localhost:8000) || (command -v xdg-open >/dev/null && xdg-open http://localhost:8000) || true ) &
-exec .venv/bin/python -m uvicorn hub.app:app --host 127.0.0.1 --port 8000
+# Use port 8000, or the next free one if something else already has it
+PORT=$(.venv/bin/python - <<'PY'
+import socket
+for port in range(8000, 8021):
+    with socket.socket() as s:
+        try:
+            s.bind(("127.0.0.1", port))
+            print(port)
+            break
+        except OSError:
+            pass
+PY
+)
+[ -n "$PORT" ] || { echo "No free port between 8000 and 8020."; exit 1; }
+[ "$PORT" = 8000 ] || echo "Port 8000 is in use — using $PORT instead."
+
+URL="http://localhost:$PORT"
+echo "[4/4] Starting Top of Mind at $URL  (Ctrl+C to stop)"
+( sleep 3; (command -v open >/dev/null && open "$URL") || (command -v xdg-open >/dev/null && xdg-open "$URL") || true ) &
+exec .venv/bin/python -m uvicorn hub.app:app --host 127.0.0.1 --port "$PORT"
